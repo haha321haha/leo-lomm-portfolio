@@ -1,0 +1,615 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leo Lomm · Terminal</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;700&display=swap");
+  :root{--bg:#0a0a0a;--surface:#111;--border:#2a2a2a;--green:#4af626;--amber:#ffb000;--text:#c0c0c0;--text-dim:#666;--r:0px}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth;overflow-x:hidden}
+  body{font-family:"JetBrains Mono",monospace;background:var(--bg);color:var(--text);cursor:auto;line-height:1.8;font-size:.85rem}
+  body.modal-open{overflow:hidden}
+  ::selection{background:var(--green);color:#000}
+
+  #bg-canvas{display:none}
+  .content{position:relative;z-index:1}
+
+  
+
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#000;border-bottom:2px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:52px}
+  .nav-logo{font-family:"JetBrains Mono",monospace;font-size:.9rem;font-weight:700;color:var(--green);letter-spacing:1px}
+  .nav-logo::before{content:"> "}
+  .nav-right{display:flex;align-items:center;gap:2rem}
+  .nav-links{display:flex;gap:1.5rem;list-style:none}
+  .nav-links a{color:var(--text-dim);text-decoration:none;font-size:.7rem;transition:color .2s}
+  .nav-links a::before{content:"["} .nav-links a::after{content:"]"}
+  .nav-links a:hover{color:var(--green)}
+  .lang-toggle{display:flex;gap:0;background:#000;border:1px solid var(--border)}
+  .lang-btn{padding:4px 10px;border:none;background:transparent;color:var(--text-dim);cursor:pointer;transition:all .15s;font-family:inherit;font-size:.65rem}
+  .lang-btn.active{background:var(--green);color:#000}
+
+  section{padding:5rem 2rem;max-width:1000px;margin:0 auto;position:relative;border-bottom:1px solid var(--border)}
+  section:last-of-type{border-bottom:none}
+  .section-tag{font-size:.6rem;color:var(--green);margin-bottom:1.5rem;letter-spacing:1px}
+  .section-tag::before{content:"## ";color:var(--text-dim)}
+  .section-header{margin-bottom:2.5rem}
+  .section-header h2{font-size:1.3rem;font-weight:700;margin-bottom:.5rem;color:var(--amber)}
+  .section-header p{color:var(--text-dim);font-size:.75rem;max-width:600px}
+
+  .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:left;flex-direction:column;position:relative;border-bottom:2px solid var(--green)}
+  .hero h1{font-size:3rem;font-weight:700;color:var(--green);line-height:1.2;text-shadow:0 0 20px rgba(74,246,38,.3)}
+  .hero h1::before{content:"$ whoami";display:block;font-size:.65rem;color:var(--text-dim);margin-bottom:.8rem;font-weight:400;text-shadow:none}
+  .hero .subtitle{margin-top:1rem;font-size:.85rem;color:var(--text-dim)}
+  .hero .typing{color:var(--amber)}
+  .hero .cursor-blink{animation:blink .8s step-end infinite}@keyframes blink{50%{opacity:0}}
+  .hero-stats{display:flex;gap:3rem;margin-top:3rem}
+  .hero-stat{text-align:left}
+  .hero-stat .num{font-size:2rem;font-weight:700;color:var(--amber)}
+  .hero-stat .label{font-size:.6rem;color:var(--text-dim);margin-top:.3rem}
+  .hero-stat .label::before{content:"// "}
+
+  .feature{display:grid;grid-template-columns:1.2fr 1fr;border:1px solid var(--border);background:var(--surface)}
+  .feature-media{position:relative;min-height:380px;background:#000;overflow:hidden}
+  .feature-media img{width:100%;height:100%;object-fit:cover;display:block;opacity:.85}
+  .feature-media .feature-badge{position:absolute;top:12px;left:12px;z-index:3;background:#000;border:1px solid var(--green);padding:3px 10px;font-size:.55rem;color:var(--green)}
+  .feature-info{padding:2rem;display:flex;flex-direction:column;justify-content:center}
+  .feature-info .feature-eyebrow{font-size:.6rem;color:var(--text-dim);margin-bottom:.8rem}
+  .feature-info .feature-eyebrow::before{content:"[ "}.feature-info .feature-eyebrow::after{content:" ]"}
+  .feature-info h2{font-size:1.4rem;font-weight:700;margin-bottom:1rem;color:var(--amber)}
+  .feature-info p{color:var(--text-dim);font-size:.78rem;line-height:1.7;margin-bottom:1.2rem}
+  .feature-info .feature-tags{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem}
+  .feature-info .feature-tags .tag{font-size:.6rem;padding:3px 10px;border:1px solid var(--border);color:var(--green)}
+  .btn-view{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 1.5rem;background:transparent;border:1px solid var(--green);color:var(--green);font-family:inherit;font-size:.7rem;cursor:pointer;transition:all .15s;text-decoration:none;width:fit-content}
+  .btn-view:hover{background:var(--green);color:#000}
+  .btn-view svg{width:14px;height:14px}
+
+  .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:start}
+  .about-avatar{width:100%;max-width:280px;border:1px solid var(--border);overflow:hidden;filter:grayscale(100%) contrast(1.2)}
+  .about-avatar img{width:100%;display:block}
+  .about-text h2{font-size:1.2rem;font-weight:700;margin-bottom:1.2rem;color:var(--amber)}
+  .about-text h2::before{content:"/* "}.about-text h2::after{content:" */"}
+  .about-text p{color:var(--text-dim);margin-bottom:.8rem;font-size:.8rem}
+  .about-text .highlight{color:var(--green)}
+  .about-philosophy{margin-top:1.2rem;padding:1rem;border:1px solid var(--border);background:rgba(74,246,38,.02)}
+  .about-philosophy h4{font-size:.65rem;color:var(--green);margin-bottom:.5rem}
+  .about-philosophy h4::before{content:"> "}
+  .about-philosophy p{font-size:.78rem;color:var(--text-dim);margin:0}
+
+  .services-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+  .service-card{background:var(--surface);padding:1.8rem 1.5rem;border:1px solid transparent;transition:border-color .2s}
+  .service-card:hover{border-color:var(--green)}
+  .service-card .svc-icon{margin-bottom:1rem;color:var(--green)}.service-card .svc-icon svg{width:24px;height:24px}
+  .service-card h3{font-size:.9rem;font-weight:700;margin-bottom:.6rem;color:var(--amber)}
+  .service-card ul{list-style:none}
+  .service-card li{font-size:.73rem;color:var(--text-dim);padding:.2rem 0}
+  .service-card li::before{content:"- "}
+
+  .projects-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+  .project-card{background:var(--surface);overflow:hidden;cursor:pointer;border:1px solid transparent;transition:border-color .2s}
+  .project-card:hover{border-color:var(--green)}
+  .project-card .card-glow{display:none}
+  .project-card .card-thumb{width:100%;height:180px;object-fit:cover;display:block;filter:grayscale(80%) contrast(1.1)}
+  .project-card:hover .card-thumb{filter:grayscale(0%)}
+  .project-card .thumb-wrap{position:relative;overflow:hidden}
+  .project-card .video-badge{position:absolute;top:0;right:0;z-index:3;background:var(--green);padding:3px 8px;font-size:.55rem;color:#000;font-weight:700}
+  .project-card .video-badge svg{display:none}
+  .project-card .play-overlay{display:none}
+  .project-info{padding:1.2rem}
+  .project-info h3{font-size:.9rem;font-weight:700;margin-bottom:.3rem}
+  .project-info .tags{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.4rem}
+  .project-info .tag{font-size:.55rem;padding:2px 7px;border:1px solid var(--border);color:var(--text-dim)}
+  .project-info .tag.type-3d{color:var(--green);border-color:var(--green)}
+  .project-info .tag.type-id{color:var(--amber);border-color:var(--amber)}
+
+  .testimonials-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+  .testimonial-card{background:var(--surface);padding:1.8rem 1.5rem}
+  .testimonial-card .t-quote{display:none}
+  .testimonial-card p{font-size:.78rem;color:var(--text);line-height:1.7;margin-bottom:1rem}
+  .testimonial-card p::before{content:"> "}
+  .testimonial-card .t-author{font-size:.7rem;font-weight:700;color:var(--green)}
+  .testimonial-card .t-role{font-size:.65rem;color:var(--text-dim);margin-top:2px}
+
+  .numbers-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border)}
+  .number-card{background:var(--surface);padding:1.8rem 1rem;text-align:center}
+  .number-card .n-value{font-size:2.2rem;font-weight:700;color:var(--amber);line-height:1}
+  .number-card .n-unit{font-size:.65rem;color:var(--amber);margin-left:2px}
+  .number-card .n-label{font-size:.6rem;color:var(--text-dim);margin-top:.3rem}
+
+  .timeline{position:relative;padding-left:1rem}
+  .timeline::before{content:"";position:absolute;left:0;top:0;bottom:0;width:1px;background:var(--green)}
+  .timeline-item{position:relative;padding-bottom:2rem;padding-left:1.5rem}
+  .timeline-item:last-child{padding-bottom:0}
+  .timeline-item::before{content:"";position:absolute;left:-3px;top:5px;width:7px;height:7px;background:var(--green)}
+  .timeline-item .tl-year{font-size:.65rem;color:var(--amber);margin-bottom:.2rem;font-weight:700}
+  .timeline-item h4{font-size:.9rem;font-weight:700;margin-bottom:.2rem}
+  .timeline-item p{font-size:.73rem;color:var(--text-dim)}
+
+  .how-i-work-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border)}
+  .hiw-step{background:var(--surface);padding:2rem 1rem;text-align:left;border:1px solid transparent;transition:border-color .2s}
+  .hiw-step:hover{border-color:var(--green)}
+  .hiw-step .hiw-num{font-size:1.5rem;font-weight:700;color:var(--green);margin-bottom:.8rem;line-height:1}
+  .hiw-step .hiw-num::after{content:"."}
+  .hiw-step h4{font-size:.85rem;font-weight:700;margin-bottom:.4rem;color:var(--amber)}
+  .hiw-step p{font-size:.7rem;color:var(--text-dim)}
+  .hiw-connector{display:none}
+
+  .skills-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--border)}
+  .skill-category{background:var(--surface);padding:1.5rem}
+  .skill-category h3{font-size:.75rem;font-weight:700;color:var(--green);margin-bottom:1rem}
+  .skill-category h3::before{content:"// "}
+  .skill-bar-wrap{margin-bottom:.8rem}
+  .skill-bar-label{display:flex;justify-content:space-between;font-size:.7rem;margin-bottom:4px}
+  .skill-bar{height:3px;background:var(--border);overflow:hidden}
+  .skill-bar-fill{height:100%;background:var(--green);transition:width 1s ease-out}
+
+  .contact-inner{text-align:center}
+  .contact-cta-btn{display:inline-flex;align-items:center;gap:.5rem;margin-top:1.5rem;padding:.7rem 1.8rem;background:transparent;border:1px solid var(--amber);color:var(--amber);font-family:inherit;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .15s;text-decoration:none}
+  .contact-cta-btn:hover{background:var(--amber);color:#000}
+  .contact-cta-btn svg{width:16px;height:16px}
+  .contact-links{display:flex;justify-content:center;gap:1.5rem;margin-top:2rem;flex-wrap:wrap}
+  .contact-link{display:flex;align-items:center;gap:.4rem;padding:.5rem 0;border:none;color:var(--text-dim);text-decoration:none;font-size:.75rem;background:transparent;transition:color .15s}
+  .contact-link:hover{color:var(--green)}
+  .contact-link svg{width:14px;height:14px}
+
+  footer{text-align:center;padding:2rem;border-top:1px solid var(--border);font-size:.65rem;color:var(--text-dim)}
+  footer::before{content:"[EOF]";display:block;color:var(--green);margin-bottom:.5rem}
+
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);z-index:9999;background:#000;border:1px solid var(--green);padding:.8rem 1.5rem;font-family:inherit;font-size:.7rem;color:var(--green);transition:transform .2s ease-out}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast svg{display:none}
+  .toast::before{content:">> "}
+
+  .modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+  .modal-overlay.open{opacity:1;pointer-events:auto}
+  .modal-container{display:grid;grid-template-columns:1.2fr 1fr;width:94vw;max-width:1100px;max-height:88vh;background:var(--surface);border:1px solid var(--green);overflow:hidden}
+  .modal-overlay.open .modal-container{animation:terminalIn .2s ease-out}@keyframes terminalIn{from{transform:scaleY(.9)}to{transform:scaleY(1)}}
+  .modal-media{position:relative;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:400px}
+  .modal-media img,.modal-media video{width:100%;height:100%;object-fit:cover;filter:grayscale(30%)}
+  .modal-details{padding:2rem;display:flex;flex-direction:column;overflow-y:auto}
+  .modal-details h2{font-size:1.4rem;font-weight:700;margin-bottom:.8rem;color:var(--amber)}
+  .modal-details .modal-type{font-size:.6rem;color:var(--green);margin-bottom:1rem}.modal-details .modal-type.type-id{color:var(--amber)}
+  .modal-details .modal-type::before{content:"["}.modal-details .modal-type::after{content:"]"}
+  .modal-details .modal-desc{color:var(--text-dim);font-size:.8rem;line-height:1.7;margin-bottom:1.2rem}
+  .modal-details .modal-process{border-left:1px solid var(--border);padding-left:1rem;margin-bottom:1.2rem}
+  .modal-details .modal-process h4{font-size:.65rem;color:var(--green);margin-bottom:.4rem}
+  .modal-details .modal-process p{color:var(--text-dim);font-size:.75rem}
+  .modal-details .modal-tags{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:auto}
+  .modal-details .modal-tags .tag{font-size:.6rem;padding:3px 10px;border:1px solid var(--border);color:var(--text-dim)}
+  .modal-close{position:absolute;top:12px;right:12px;z-index:10;width:32px;height:32px;background:#000;border:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-family:inherit;font-size:.7rem}
+  .modal-close:hover{border-color:var(--green);color:var(--green)}
+  .modal-close svg{width:14px;height:14px}
+  .modal-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:36px;height:36px;background:#000;border:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+  .modal-nav:hover{border-color:var(--green);color:var(--green)}
+  .modal-nav svg{width:16px;height:16px}
+  .modal-prev{left:10px}.modal-next{right:10px}
+
+  @media(max-width:768px){
+    .hero h1{font-size:2rem}.hero-stats{gap:2rem}
+    nav{padding:0 1rem}.nav-links{gap:1rem}.nav-links a{font-size:.6rem}
+    section{padding:4rem 1rem}
+    .about-grid{grid-template-columns:1fr}.about-avatar{max-width:200px}
+    .feature{grid-template-columns:1fr}.feature-media{min-height:240px}.feature-info{padding:1.5rem}
+    .services-grid{grid-template-columns:1fr}
+    .projects-grid{grid-template-columns:repeat(2,1fr)}
+    .testimonials-grid{grid-template-columns:1fr}
+    .numbers-row{grid-template-columns:repeat(2,1fr)}
+    .how-i-work-steps{grid-template-columns:1fr 1fr}
+    .skills-container{grid-template-columns:1fr}
+    .modal-container{grid-template-columns:1fr;max-height:95vh}.modal-media{min-height:200px}.modal-details{padding:1.5rem}
+  }
+  @media(max-width:480px){.projects-grid{grid-template-columns:1fr}.how-i-work-steps{grid-template-columns:1fr}}
+
+#node-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+
+
+
+</style>
+<canvas id="node-canvas"></canvas><div class="content">
+
+ <nav>
+ <div class="nav-logo">&lt;Leo Lomm /&gt;</div>
+ <div class="nav-right">
+ <ul class="nav-links">
+ <li><a href="#about" data-zh="关于" data-en="About"></a></li>
+ <li><a href="#services" data-zh="服务" data-en="Services"></a></li>
+ <li><a href="#projects" data-zh="作品" data-en="Works"></a></li>
+ <li><a href="#timeline" data-zh="经历" data-en="Journey"></a></li>
+ 
+ <li><a href="#contact" data-zh="联系" data-en="Contact"></a></li>
+ </ul>
+ <div class="lang-toggle">
+ <button class="lang-btn active" data-lang="zh" id="btnZh">中</button>
+ <button class="lang-btn" data-lang="en" id="btnEn">EN</button>
+ </div>
+ </div>
+ </nav>
+
+ <section class="hero" id="hero">
+ <div class="hero-glow" id="heroGlow"></div>
+ <h1>Leo Lomm</h1>
+ <p class="subtitle">&gt; <span class="typing" id="typing"></span><span class="cursor-blink">_</span></p>
+ <div class="hero-stats">
+ <div class="hero-stat"><div class="num" data-target="6">0</div><div class="label" data-zh="年经验" data-en="YRS EXP"></div></div>
+ <div class="hero-stat"><div class="num" data-target="37">0</div><div class="label" data-zh="个项目" data-en="PROJECTS"></div></div>
+ <div class="hero-stat"><div class="num" data-target="14">0</div><div class="label" data-zh="位客户" data-en="CLIENTS"></div></div>
+ </div>
+ <div class="scroll-indicator"><span></span></div>
+ </section>
+
+ <section id="feature">
+ <div class="section-tag" data-zh="精选聚焦" data-en="Featured Work"></div>
+ <div class="feature">
+ <div class="feature-media">
+ <img src="https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=800&h=500&fit=crop" alt="Chromatic Flow">
+ <div class="feature-badge">FEATURED</div>
+ </div>
+ <div class="feature-info">
+ <div class="feature-eyebrow" data-zh="3D 动效设计" data-en="3D Motion Design"></div>
+ <h2>Chromatic Flow</h2>
+ <p data-zh="探索色彩在三维空间中的流动与折射，通过程序化材质与动态光照创造具有强烈视觉冲击力的抽象动画序列。" data-en="An exploration of color flow and refraction in 3D space, using procedural materials and dynamic lighting to create abstract animation sequences with powerful visual impact."></p>
+ <div class="feature-tags"><span class="tag">Blender</span><span class="tag">After Effects</span><span class="tag">Geometry Nodes</span></div>
+ <button class="btn-view" onclick="openModal(0)"><span data-zh="查看详情" data-en="View Details"></span> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg></button>
+ </div>
+ </div>
+ </section>
+
+ <section id="about">
+ <div class="section-tag" data-zh="关于我" data-en="About Me"></div>
+ <div class="about-grid">
+ <div class="about-avatar"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=600&fit=crop&crop=face" alt="Portrait" onerror="this.style.display='none';this.parentElement.innerHTML='<div style=color:var(--cyan);font-size:4rem;font-family:JetBrains+Mono,monospace;padding:4rem>L</div>'"></div>
+ <div class="about-text">
+ <h2 data-zh="3D 动效设计师 &amp; 创意技术专家" data-en="3D Motion Designer &amp; Creative Technologist"></h2>
+ <p data-zh="你好！我是 <span class='highlight'>Leo Leo Lomm</span>，专注于<span class='highlight'>3D 动效设计</span>与<span class='highlight'>工业设计</span>的交叉领域。我相信好的设计不仅在纸面上成立，更应该在三维空间中呼吸。" data-en="Hi, I am <span class='highlight'>Leo Leo Lomm</span>, working at the intersection of <span class='highlight'>3D motion design</span> and <span class='highlight'>industrial design</span>. I believe great design breathes in three dimensions, not just on paper."></p>
+ <p data-zh="擅长用 <span class='highlight'>Blender / 3ds Max / After Effects</span> 创造动态视觉，也用 <span class='highlight'>C# 与 AI 工具</span>将创意自动化。从产品概念草图到最终渲染动画，覆盖完整的创作管线。" data-en="Skilled in <span class='highlight'>Blender / 3ds Max / After Effects</span> for motion visuals, and <span class='highlight'>C# with AI tools</span> for creative automation. From concept sketches to final rendered animation, I cover the full creative pipeline."></p>
+ <div class="about-philosophy">
+  <h4 data-zh="设计信条" data-en="Design Philosophy"></h4>
+  <p data-zh="形式服从功能，但功能需要形式来诉说。每一个像素、每一帧动画都应有它存在的理由。" data-en="Form follows function, but function needs form to speak. Every pixel, every frame of animation must justify its existence."></p>
+ </div>
+ </div>
+ </div>
+ </section>
+
+ <section id="services">
+ <div class="section-tag" data-zh="我能做什么" data-en="What I Can Do"></div>
+ <div class="section-header">
+ <h2 data-zh="跨领域的创作能力" data-en="Cross-Discipline Creative Capabilities"></h2>
+ <p data-zh="三条技能线，一个完整的创意交付链路。" data-en="Three skill tracks, one complete creative delivery pipeline."></p>
+ </div>
+ <div class="services-grid">
+ <div class="service-card">
+ <div class="svc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27,6.96 12,12.01 20.73,6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+ <h3 data-zh="3D 动效设计" data-en="3D Motion Design"></h3>
+ <ul>
+  <li data-zh="产品动画与品牌视觉短片" data-en="Product animation & brand shorts"></li>
+  <li data-zh="抽象动效与动态视觉" data-en="Abstract motion & dynamic visuals"></li>
+  <li data-zh="程序化材质与特效模拟" data-en="Procedural materials & VFX"></li>
+  <li data-zh="动态字体与图形动画" data-en="Kinetic typography & motion graphics"></li>
+ </ul>
+ </div>
+ <div class="service-card">
+ <div class="svc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg></div>
+ <h3 data-zh="工业设计" data-en="Industrial Design"></h3>
+ <ul>
+  <li data-zh="产品概念设计与曲面建模" data-en="Product concept & surface modeling"></li>
+  <li data-zh="参数化设计与结构分析" data-en="Parametric design & structural analysis"></li>
+  <li data-zh="Keyshot 产品级渲染" data-en="Keyshot product-level rendering"></li>
+  <li data-zh="原型制作与设计验证" data-en="Prototyping & design validation"></li>
+ </ul>
+ </div>
+ <div class="service-card">
+ <div class="svc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg></div>
+ <h3 data-zh="Code &amp; AI" data-en="Code &amp; AI"></h3>
+ <ul>
+  <li data-zh="C# 工具与插件开发" data-en="C# tool & plugin development"></li>
+  <li data-zh="OpenAI / GPT 创意流程集成" data-en="OpenAI / GPT creative workflow integration"></li>
+  <li data-zh="AI 图像生成与辅助设计" data-en="AI image generation & design assistance"></li>
+  <li data-zh="Python 自动化脚本" data-en="Python automation scripting"></li>
+ </ul>
+ </div>
+ </div>
+ </section>
+
+ <section id="projects">
+ <div class="section-tag" data-zh="精选作品" data-en="Featured Works"></div>
+ <div class="projects-grid">
+ <div class="project-card" data-project="0"><div class="card-glow"></div><div class="thumb-wrap"><img class="card-thumb" src="https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=600&h=360&fit=crop" alt="Chromatic Flow" loading="lazy" onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#0a0a20,#1a1040)';this.style.minHeight='180px'"><div class="video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>VIDEO</div><div class="play-overlay"><svg viewBox="0 0 24 24" fill="rgba(0,229,255,.9)"><circle cx="12" cy="12" r="11" fill="none" stroke="rgba(0,229,255,.4)" stroke-width="1"/><polygon points="9,7 9,17 18,12"/></svg></div></div><div class="project-info"><h3>Chromatic Flow</h3><div class="tags"><span class="tag type-3d">3D Motion</span><span class="tag">Blender</span><span class="tag">AE</span></div></div></div>
+
+ <div class="project-card" data-project="1"><div class="card-glow"></div><div class="thumb-wrap"><img class="card-thumb" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&h=360&fit=crop" alt="Nebula Drift" loading="lazy" onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#0a0a20,#1a1040)';this.style.minHeight='180px'"><div class="video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>VIDEO</div><div class="play-overlay"><svg viewBox="0 0 24 24" fill="rgba(0,229,255,.9)"><circle cx="12" cy="12" r="11" fill="none" stroke="rgba(0,229,255,.4)" stroke-width="1"/><polygon points="9,7 9,17 18,12"/></svg></div></div><div class="project-info"><h3>Nebula Drift</h3><div class="tags"><span class="tag type-3d">3D Motion</span><span class="tag">Blender</span><span class="tag">AE</span></div></div></div>
+
+ <div class="project-card" data-project="2"><div class="card-glow"></div><div class="thumb-wrap"><img class="card-thumb" src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&h=360&fit=crop" alt="Geometric Pulse" loading="lazy" onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#0a0a20,#1a1040)';this.style.minHeight='180px'"><div class="video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>VIDEO</div><div class="play-overlay"><svg viewBox="0 0 24 24" fill="rgba(0,229,255,.9)"><circle cx="12" cy="12" r="11" fill="none" stroke="rgba(0,229,255,.4)" stroke-width="1"/><polygon points="9,7 9,17 18,12"/></svg></div></div><div class="project-info"><h3>Geometric Pulse</h3><div class="tags"><span class="tag type-3d">3D Motion</span><span class="tag">Blender</span><span class="tag">3ds Max</span></div></div></div>
+
+ <div class="project-card" data-project="3"><div class="card-glow"></div><div class="thumb-wrap"><img class="card-thumb" src="https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=600&h=360&fit=crop" alt="Liquid Kinetics" loading="lazy" onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#0a0a20,#1a1040)';this.style.minHeight='180px'"><div class="video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>VIDEO</div><div class="play-overlay"><svg viewBox="0 0 24 24" fill="rgba(0,229,255,.9)"><circle cx="12" cy="12" r="11" fill="none" stroke="rgba(0,229,255,.4)" stroke-width="1"/><polygon points="9,7 9,17 18,12"/></svg></div></div><div class="project-info"><h3>Liquid Kinetics</h3><div class="tags"><span class="tag type-3d">3D Motion</span><span class="tag">Blender</span><span class="tag">Python</span></div></div></div>
+
+ <div class="project-card" data-project="4"><div class="card-glow"></div><div class="thumb-wrap"><img class="card-thumb" src="https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=600&h=360&fit=crop" alt="Type in Motion" loading="lazy" onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#0a0a20,#1a1040)';this.style.minHeight='180px'"><div class="video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>VIDEO</div><div class="play-overlay"><svg viewBox="0 0 24 24" fill="rgba(0,229,255,.9)"><circle cx="12" cy="12" r="11" fill="none" stroke="rgba(0,229,255,.4)" stroke-width="1"/><polygon points="9,7 9,17 18,12"/></svg></div></div><div class="project-info"><h3>Type in Motion</h3><div class="tags"><span class="tag type-3d">3D Motion</span><span class="tag">AE</span><span class="tag">C4D</span></div></div></div>
+
+ <div class="project-card" data-project="5"><div class="card-glow"></div><div class="thumb-wrap"><img class="card-thumb" src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&h=360&fit=crop" alt="Morph Chair" loading="lazy" onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#1a0a0a,#401010)';this.style.minHeight='180px'"></div><div class="project-info"><h3>Morph Chair</h3><div class="tags"><span class="tag type-id">Industrial</span><span class="tag">Rhino</span><span class="tag">Keyshot</span></div></div></div>
+
+ <div class="project-card" data-project="6"><div class="card-glow"></div><div class="thumb-wrap"><img class="card-thumb" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=360&fit=crop" alt="Lightform Lamp" loading="lazy" onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#1a0a0a,#401010)';this.style.minHeight='180px'"></div><div class="project-info"><h3>Lightform Lamp</h3><div class="tags"><span class="tag type-id">Industrial</span><span class="tag">Fusion 360</span><span class="tag">Keyshot</span></div></div></div>
+
+ <div class="project-card" data-project="7"><div class="card-glow"></div><div class="thumb-wrap"><img class="card-thumb" src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=360&fit=crop" alt="Modular Desk" loading="lazy" onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#1a0a0a,#401010)';this.style.minHeight='180px'"></div><div class="project-info"><h3>Modular Desk</h3><div class="tags"><span class="tag type-id">Industrial</span><span class="tag">Rhino</span><span class="tag">Keyshot</span></div></div></div>
+
+ <div class="project-card" data-project="8"><div class="card-glow"></div><div class="thumb-wrap"><img class="card-thumb" src="https://images.unsplash.com/photo-1612282131027-7aa8f35b1c7c?w=600&h=360&fit=crop" alt="Wearable Concept" loading="lazy" onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#1a0a0a,#401010)';this.style.minHeight='180px'"></div><div class="project-info"><h3>Wearable Concept</h3><div class="tags"><span class="tag type-id">Industrial</span><span class="tag">Fusion 360</span><span class="tag">Blender</span></div></div></div>
+
+ </div>
+ </section>
+
+ <section id="testimonials">
+ <div class="section-tag" data-zh="合作反馈" data-en="Testimonials"></div>
+ <div class="section-header">
+ <h2 data-zh="他们怎么说" data-en="What They Say"></h2>
+ <p data-zh="来自合作伙伴的信任与认可。" data-en="Trust and recognition from collaborators."></p>
+ </div>
+ <div class="testimonials-grid">
+ <div class="testimonial-card">
+ <div class="t-quote">&ldquo;</div>
+ <p data-zh="Leo Lomm 对动态视觉的理解远超我们的预期。他为我们的产品发布会制作的 3D 短片，让整个会场都安静了下来。" data-en="Leo Lomm's understanding" of motion visuals exceeded our expectations. The 3D short he created for our product launch silenced the entire venue."></p>
+ <div class="t-author">Zhang Wei</div>
+ <div class="t-role" data-zh="某消费电子品牌 · 市场总监" data-en="Consumer Electronics Brand · Marketing Director"></div>
+ </div>
+ <div class="testimonial-card">
+ <div class="t-quote">&ldquo;</div>
+ <p data-zh="工业设计背景加上 3D 动效能力，这种组合非常罕见。他能从产品结构的角度理解动画，而不仅仅是表面效果。" data-en="Industrial design background plus 3D motion skills is a rare combination. He understands animation from a product structure perspective, not just surface effects."></p>
+ <div class="t-author">Lin Yue</div>
+ <div class="t-role" data-zh="独立设计工作室 · 创始人" data-en="Independent Design Studio · Founder"></div>
+ </div>
+ <div class="testimonial-card">
+ <div class="t-quote">&ldquo;</div>
+ <p data-zh="沟通效率极高，从 brief 到初稿只用了三天。他对节奏的把控让最终成片在没有任何音乐的情况下已经很有感染力。" data-en="Extremely efficient communication, from brief to first draft in three days. His sense of rhythm made the final cut compelling even without music."></p>
+ <div class="t-author">Sarah Kim</div>
+ <div class="t-role" data-zh="科技初创公司 · 创意总监" data-en="Tech Startup · Creative Director"></div>
+ </div>
+ </div>
+ </section>
+
+ <section id="numbers">
+ <div class="section-tag" data-zh="数据亮点" data-en="By the Numbers"></div>
+ <div class="numbers-row">
+ <div class="number-card"><div class="n-value"><span data-num="1240">0</span><span class="n-unit">h</span></div><div class="n-label" data-zh="渲染总时长" data-en="Render Hours"></div></div>
+ <div class="number-card"><div class="n-value"><span data-num="37">0</span><span class="n-unit">+</span></div><div class="n-label" data-zh="完成项目" data-en="Projects Done"></div></div>
+ <div class="number-card"><div class="n-value"><span data-num="9">0</span><span class="n-unit"></span></div><div class="n-label" data-zh="掌握工具" data-en="Tools Mastered"></div></div>
+ <div class="number-card"><div class="n-value"><span data-num="2.8">0</span><span class="n-unit">M</span></div><div class="n-label" data-zh="最高模型面数" data-en="Max Poly Count"></div></div>
+ </div>
+ </section>
+
+ <section id="timeline">
+ <div class="section-tag" data-zh="经历" data-en="Journey"></div>
+ <div class="section-header">
+ <h2 data-zh="走过的路" data-en="The Path So Far"></h2>
+ <p data-zh="从工业设计到 3D 动效，每一步都在拓宽创作的边界。" data-en="From industrial design to 3D motion, each step expands the boundaries of creation."></p>
+ </div>
+ <div class="timeline">
+ <div class="timeline-item"><div class="tl-year">2024</div><h4 data-zh="独立 3D 动效设计师" data-en="Independent 3D Motion Designer"></h4><p data-zh="以自由职业者身份为多个品牌提供 3D 视觉设计服务，涵盖产品动画、品牌短片与动态视觉。" data-en="Providing 3D visual design services for multiple brands as a freelancer, covering product animations, brand shorts, and motion graphics."></p></div>
+ <div class="timeline-item"><div class="tl-year">2023</div><h4 data-zh="设计工作室 · 3D Motion 设计师" data-en="Design Studio · 3D Motion Designer"></h4><p data-zh="负责工作室所有 3D 动效项目的创意执行，从概念到交付全流程把控。" data-en="Led creative execution for all 3D motion projects at the studio, managing the full pipeline from concept to delivery."></p></div>
+ <div class="timeline-item"><div class="tl-year">2022</div><h4 data-zh="开始系统学习 3D 动效" data-en="Started Systematic 3D Motion Learning"></h4><p data-zh="在工业设计基础上自学 Blender 动效与 AE 合成，完成了第一个完整的 3D 动画作品。" data-en="Self-taught Blender animation and AE compositing on top of industrial design foundations, completing my first full 3D animation piece."></p></div>
+ <div class="timeline-item"><div class="tl-year">2021</div><h4 data-zh="工业设计专业毕业" data-en="Graduated in Industrial Design"></h4><p data-zh="系统学习了产品设计方法论、人机工学与参数化建模。" data-en="Studied product design methodology, ergonomics, and parametric modeling."></p></div>
+ <div class="timeline-item"><div class="tl-year">2020</div><h4 data-zh="首次接触 3D 软件" data-en="First Encounter with 3D Software"></h4><p data-zh="初次使用 Rhino 与 3ds Max，被三维空间中的创作自由度所吸引。" data-en="First used Rhino and 3ds Max, captivated by the creative freedom of 3D space."></p></div>
+ </div>
+ </section>
+
+ <section id="how-i-work">
+ <div class="section-tag" data-zh="合作流程" data-en="How I Work"></div>
+ <div class="section-header">
+ <h2 data-zh="与你合作的体验" data-en="What It Is Like to Work With Me"></h2>
+ <p data-zh="透明、高效、每一步都让你心中有数。" data-en="Transparent, efficient, you will always know where we stand."></p>
+ </div>
+ <div class="how-i-work-steps">
+ <div class="hiw-step"><div class="hiw-num">1</div><div class="hiw-connector"></div><h4 data-zh="需求沟通" data-en="Discovery"></h4><p data-zh="了解你的品牌、目标受众与创意愿景。我会提出几个视觉方向供选择。" data-en="Understanding your brand, audience, and creative vision. I will propose visual directions for you to choose from."></p></div>
+ <div class="hiw-step"><div class="hiw-num">2</div><div class="hiw-connector"></div><h4 data-zh="方案提案" data-en="Proposal"></h4><p data-zh="提供风格帧、故事板或草模，确认方向后进入制作阶段。" data-en="Delivering style frames, storyboards, or draft models. Production begins after alignment."></p></div>
+ <div class="hiw-step"><div class="hiw-num">3</div><div class="hiw-connector"></div><h4 data-zh="迭代制作" data-en="Iteration"></h4><p data-zh="定期同步进度，在关键节点收集反馈并快速调整，确保方向不跑偏。" data-en="Regular progress syncs, collecting feedback at key milestones for fast adjustments."></p></div>
+ <div class="hiw-step"><div class="hiw-num">4</div><h4 data-zh="交付" data-en="Delivery"></h4><p data-zh="最终渲染输出，提供多格式源文件与使用指南，确保你可以自由使用。" data-en="Final render delivery with multi-format source files and usage guide for your full control."></p></div>
+ </div>
+ </section>
+
+ <section id="skills">
+ <div class="section-tag" data-zh="技能" data-en="Skills"></div>
+ <div class="skills-container">
+ <div class="skill-category">
+ <h3>// 3D &amp; Motion</h3>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>Blender</span><span>92%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="92"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>3ds Max</span><span>85%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="85"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>After Effects</span><span>90%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="90"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>Keyshot / Rendering</span><span>88%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="88"></div></div></div>
+ </div>
+ <div class="skill-category">
+ <h3>// Code &amp; AI Tools</h3>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>C#</span><span>78%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="78"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>OpenAI / GPT</span><span>82%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="82"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>Python Scripting</span><span>70%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="70"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>AI Image Gen</span><span>85%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="85"></div></div></div>
+ </div>
+ <div class="skill-category">
+ <h3>// Industrial Design</h3>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>Rhino 3D</span><span>80%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="80"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>Fusion 360</span><span>75%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="75"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>Sketching</span><span>90%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="90"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>Prototyping</span><span>82%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="82"></div></div></div>
+ </div>
+ </div>
+ </section>
+
+ 
+
+ <section id="contact">
+ <div class="contact-inner">
+ <div class="section-tag" data-zh="联系我" data-en="Get In Touch"></div>
+ <h2 style="font-size:2rem;margin-bottom:1rem;" data-zh="一起创造点什么" data-en="Let us Build Something"></h2>
+ <p style="color:var(--text-dim);max-width:500px;margin:0 auto;" data-zh="无论是一个品牌短片、一个产品概念，还是一段需要赋能的创意——我都很乐意聊聊。" data-en="Whether it is a brand short, a product concept, or a creative vision that needs bringing to life——I would love to chat."></p>
+ <a href="#" class="contact-cta-btn" onclick="downloadPDF();return false;">
+ <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+ <span data-zh="下载作品集 PDF" data-en="Download Portfolio PDF"></span>
+ </a>
+ <div class="contact-links">
+ <a href="#" class="contact-link" id="linkWechat" onclick="navigator.clipboard.writeText('LommLomm').then(function(){showToast('\u5DF2\u590D\u5236 \u2714');});return false;">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+  <span>WeChat</span>
+ </a>
+ <a href="mailto:lomm@example.com" class="contact-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg><span>lomm@example.com</span></a>
+ <a href="#" class="contact-link" onclick="navigator.clipboard.writeText('15605258510').then(function(){showToast('已复制 ✓');});return false;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>156-0525-8510</span>
+ </a>
+ </div>
+ </div>
+ </section>
+
+ <footer>
+ <p data-zh="&copy; 2026 Leo Lomm &mdash; 用热爱与代码构建。" data-en="&copy; 2026 Leo Lomm &mdash; Built with passion &amp; code."></p>
+ </footer>
+
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+ <div class="modal-container" id="modalContainer">
+ <button class="modal-close" id="modalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+ <button class="modal-nav modal-prev" id="modalPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg></button>
+ <button class="modal-nav modal-next" id="modalNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg></button>
+ <div class="modal-media" id="modalMedia"></div>
+ <div class="modal-details" id="modalDetails"></div>
+ </div>
+</div>
+
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg><span id="toastMsg"></span></div>
+
+
+<script>
+"use strict";
+
+/* Project Data */
+var projectData=[{title:"Chromatic Flow",type:"3d",typeLabelZh:"3D \u52A8\u6548\u8BBE\u8BA1",typeLabelEn:"3D Motion Design",media:"https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=1200&h=700&fit=crop",mediaType:"video",videoPoster:"https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=1200&h=700&fit=crop",descZh:"\u63A2\u7D22\u8272\u5F69\u5728\u4E09\u7EF4\u7A7A\u95F4\u4E2D\u7684\u6D41\u52A8\u4E0E\u6298\u5C04\u3002\u901A\u8FC7\u7A0B\u5E8F\u5316\u6750\u8D28\u4E0E\u52A8\u6001\u5149\u7167\uFF0C\u521B\u9020\u51FA\u5177\u6709\u5F3A\u70C8\u89C6\u89C9\u51B2\u51FB\u529B\u7684\u62BD\u8C61\u52A8\u753B\u5E8F\u5217\u3002",descEn:"An exploration of color flow and refraction in 3D space. Using procedural materials and dynamic lighting to create abstract animation sequences with powerful visual impact.",processZh:"\u4F7F\u7528 Blender Geometry Nodes \u751F\u6210\u7A0B\u5E8F\u5316\u7ED3\u6784\uFF0C\u5728 After Effects \u4E2D\u5B8C\u6210\u540E\u671F\u5408\u6210\u4E0E\u8272\u5F69\u5206\u7EA7\u3002",processEn:"Built with Blender Geometry Nodes for procedural structures, composited and color-graded in After Effects.",tags:["Blender","After Effects","Geometry Nodes"]},{title:"Nebula Drift",type:"3d",typeLabelZh:"3D \u52A8\u6548\u8BBE\u8BA1",typeLabelEn:"3D Motion Design",media:"https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&h=700&fit=crop",mediaType:"video",videoPoster:"https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&h=700&fit=crop",descZh:"\u6A21\u62DF\u5B87\u5B99\u661F\u4E91\u5728\u5FAE\u89C2\u5C3A\u5EA6\u4E0B\u7684\u7C92\u5B50\u8FD0\u52A8\u3002\u4F7F\u7528\u4E86 Blender \u7684\u7C92\u5B50\u7CFB\u7EDF\u4E0E\u4F53\u79EF\u6E32\u67D3\u3002",descEn:"Simulating nebula particle movement at micro scale using Blender particle systems and volume rendering.",processZh:"\u7C92\u5B50\u7CFB\u7EDF\u53C2\u6570\u8C03\u4F18 + \u4F53\u79EF\u7740\u8272\u5668\u5F00\u53D1\uFF0CAE \u540E\u671F\u5408\u6210\u3002",processEn:"Particle system tuning + volume shader development, multi-pass compositing in AE.",tags:["Blender","After Effects","Particles"]},{title:"Geometric Pulse",type:"3d",typeLabelZh:"3D \u52A8\u6548\u8BBE\u8BA1",typeLabelEn:"3D Motion Design",media:"https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200&h=700&fit=crop",mediaType:"video",videoPoster:"https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200&h=700&fit=crop",descZh:"\u4EE5\u51E0\u4F55\u5F62\u6001\u7684\u5F8B\u52A8\u4E3A\u4E3B\u9898\u7684\u54C1\u724C\u89C6\u89C9\u77ED\u7247\u3002",descEn:"A brand visual short centered on geometric rhythmic motion.",processZh:"3ds Max \u5EFA\u6A21\u4E0E\u57FA\u7840\u52A8\u753B \u2192 Blender \u6750\u8D28\u4E0E\u706F\u5149 \u2192 AE \u5408\u6210\u3002",processEn:"3ds Max modeling & animation \u2192 Blender materials & lighting \u2192 AE compositing.",tags:["3ds Max","Blender","After Effects"]},{title:"Liquid Kinetics",type:"3d",typeLabelZh:"3D \u52A8\u6548\u8BBE\u8BA1",typeLabelEn:"3D Motion Design",media:"https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=1200&h=700&fit=crop",mediaType:"video",videoPoster:"https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=1200&h=700&fit=crop",descZh:"\u6DB2\u4F53\u6A21\u62DF\u4E0E\u52A8\u529B\u5B66\u7814\u7A76\u9879\u76EE\u3002",descEn:"Fluid simulation and dynamics research project.",processZh:"Blender Mantaflow \u6D41\u4F53\u6A21\u62DF\uFF0C\u7ED3\u5408 Python \u811A\u672C\u8FDB\u884C\u53C2\u6570\u5316\u63A7\u5236\u3002",processEn:"Blender Mantaflow fluid simulation with Python scripting for parametric control.",tags:["Blender","Python","Fluid Sim"]},{title:"Type in Motion",type:"3d",typeLabelZh:"3D \u52A8\u6548\u8BBE\u8BA1",typeLabelEn:"3D Motion Design",media:"https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=1200&h=700&fit=crop",mediaType:"video",videoPoster:"https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=1200&h=700&fit=crop",descZh:"\u5B57\u4F53\u52A8\u753B\u5B9E\u9A8C\u9879\u76EE\u3002",descEn:"Typographic animation experiments.",processZh:"Cinema 4D \u5EFA\u6A21\u4E0E MoGraph \u52A8\u6548\uFF0CAE \u540E\u671F\u5408\u6210\u3002",processEn:"Cinema 4D modeling & MoGraph animation, AE post-compositing.",tags:["Cinema 4D","After Effects","Typography"]}];
+var idProjects=[{title:"Morph Chair",type:"id",typeLabelZh:"\u5DE5\u4E1A\u8BBE\u8BA1",typeLabelEn:"Industrial Design",media:"https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200&h=700&fit=crop",mediaType:"image",descZh:"\u4E00\u6B3E\u63A2\u7D22\u6709\u673A\u5F62\u6001\u4E0E\u4EBA\u4F53\u5DE5\u5B66\u7ED3\u5408\u7684\u5EA7\u6905\u8BBE\u8BA1\u3002",descEn:"A chair design exploring the fusion of organic forms and ergonomics.",processZh:"Rhino 3D \u66F2\u9762\u5EFA\u6A21 \u2192 Keyshot \u6750\u8D28\u6E32\u67D3 \u2192 1:5 \u6BD4\u4F8B\u6A21\u578B\u5236\u4F5C",processEn:"Rhino 3D surface modeling \u2192 Keyshot material rendering \u2192 1:5 scale model",tags:["Rhino","Keyshot","Ergonomics"]},{title:"Lightform Lamp",type:"id",typeLabelZh:"\u5DE5\u4E1A\u8BBE\u8BA1",typeLabelEn:"Industrial Design",media:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=700&fit=crop",mediaType:"image",descZh:"\u4EE5\u5149\u7684\u6563\u5C04\u8DEF\u5F84\u4E3A\u7075\u611F\u7684\u706F\u5177\u8BBE\u8BA1\u3002",descEn:"A lamp design inspired by light scattering paths.",processZh:"Fusion 360 \u53C2\u6570\u5316\u5EFA\u6A21 \u2192 Keyshot \u5149\u8DEF\u6A21\u62DF \u2192 3D \u6253\u5370\u539F\u578B",processEn:"Fusion 360 parametric modeling \u2192 Keyshot light simulation \u2192 3D printed prototype",tags:["Fusion 360","Keyshot","Lighting"]},{title:"Modular Desk",type:"id",typeLabelZh:"\u5DE5\u4E1A\u8BBE\u8BA1",typeLabelEn:"Industrial Design",media:"https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=700&fit=crop",mediaType:"image",descZh:"\u6A21\u5757\u5316\u529E\u516C\u684C\u7CFB\u7EDF\uFF0C\u5F3A\u8C03\u6241\u5E73\u5316\u5305\u88C5\u4E0E\u5DE5\u5177-free \u7EC4\u88C5\u3002",descEn:"A modular desk system emphasizing flat-pack design and tool-free assembly.",processZh:"Rhino \u5EFA\u6A21\u4E0E\u7ED3\u6784\u5206\u6790 \u2192 \u6989\u536F\u8FDE\u63A5\u8BBE\u8BA1 \u2192 \u5168\u5C3A\u5BF8\u6728\u5DE5\u539F\u578B",processEn:"Rhino modeling & structural analysis \u2192 joinery design \u2192 full-scale prototype",tags:["Rhino","Woodworking","Modular"]},{title:"Wearable Concept",type:"id",typeLabelZh:"\u5DE5\u4E1A\u8BBE\u8BA1",typeLabelEn:"Industrial Design",media:"https://images.unsplash.com/photo-1612282131027-7aa8f35b1c7c?w=1200&h=700&fit=crop",mediaType:"image",descZh:"\u672A\u6765\u53EF\u7A7F\u6234\u8BBE\u5907\u6982\u5FF5\u8BBE\u8BA1\u3002",descEn:"Future wearable device concept design.",processZh:"Fusion 360 \u66F2\u9762\u5EFA\u6A21 \u2192 Blender \u6982\u5FF5\u6E32\u67D3 \u2192 Arduino \u539F\u578B\u7535\u8DEF",processEn:"Fusion 360 surface modeling \u2192 Blender concept rendering \u2192 Arduino prototype",tags:["Fusion 360","Blender","Arduino"]}];
+
+
+/* Language */
+var currentLang="zh",btnZh=document.getElementById("btnZh"),btnEn=document.getElementById("btnEn");
+function setLang(lang){currentLang=lang;btnZh.classList.toggle("active",lang==="zh");btnEn.classList.toggle("active",lang==="en");document.querySelectorAll("[data-zh][data-en]").forEach(function(el){el.textContent=el.getAttribute("data-"+lang);});phrases=lang==="zh"?zhPhrases:enPhrases;phraseIdx=0;charIdx=0;isDeleting=false;typingEl.textContent="";}
+btnZh.addEventListener("click",function(){if(currentLang!=="zh")
+/* Toast */
+var toast=document.getElementById("toast"),toastMsg=document.getElementById("toastMsg"),toastTimer;
+function showToast(msg){toastMsg.textContent=msg;toast.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.classList.remove("show");},1500);}
+
+
+
+/* Node Network Canvas */
+(function(){
+  var nc=document.getElementById("node-canvas"),nctx=nc.getContext("2d");
+  var nw,nh,nodes=[],NODE_COUNT=40,CONN_DIST=160,PULL_RADIUS=220;
+  function nresize(){nw=nc.width=window.innerWidth;nh=nc.height=window.innerHeight;}
+  nresize();window.addEventListener("resize",nresize);
+  function Node(){this.x=Math.random()*nw;this.y=Math.random()*nh;this.ox=this.x;this.oy=this.y;this.vx=0;this.vy=0;this.size=Math.random()*2+1.2;this.phase=Math.random()*Math.PI*2;}
+  for(var i=0;i<NODE_COUNT;i++)nodes.push(new Node());
+  var nmx=nw/2,nmy=nh/2;
+  document.addEventListener("mousemove",function(e){nmx=e.clientX;nmy=e.clientY;});
+  var ntime=0;function nanimate(){ntime+=0.02;
+    nctx.clearRect(0,0,nw,nh);
+    for(var i=0;i<nodes.length;i++){
+      var n=nodes[i];
+      var dx=nmx-n.x,dy=nmy-n.y,dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<PULL_RADIUS&&dist>1){var f=(PULL_RADIUS-dist)/PULL_RADIUS;n.vx+=(dx/dist)*f*.03;n.vy+=(dy/dist)*f*.03;}
+      n.x+=n.vx;n.y+=n.vy;n.vx*=.92;n.vy*=.92;
+      n.x+=(n.ox-n.x)*.003;n.y+=(n.oy-n.y)*.003;
+      for(var j=i+1;j<nodes.length;j++){
+        var ndx=n.x-nodes[j].x,ndy=n.y-nodes[j].y,ndist=Math.sqrt(ndx*ndx+ndy*ndy);
+        if(ndist<CONN_DIST){
+          nctx.beginPath();nctx.moveTo(n.x,n.y);nctx.lineTo(nodes[j].x,nodes[j].y);
+          nctx.strokeStyle="rgba(74,246,38,"+(.25*(1-ndist/CONN_DIST))+")";nctx.lineWidth=.5;nctx.stroke();
+        }
+      }
+      nctx.beginPath();var ps=n.size*(.7+.3*Math.sin(ntime+n.phase));nctx.arc(n.x,n.y,ps,0,Math.PI*2);
+      var pulse=.3+.15*Math.sin(ntime+n.phase);nctx.fillStyle="rgba(74,246,38,"+pulse+")";nctx.fill();
+      nctx.strokeStyle="rgba(74,246,38,.15)";nctx.lineWidth=.8;nctx.stroke();nctx.beginPath();nctx.arc(n.x,n.y,ps+3,0,Math.PI*2);nctx.strokeStyle="rgba(74,246,38,"+(pulse*.15)+")";nctx.lineWidth=1;nctx.stroke();
+    }
+    requestAnimationFrame(nanimate);
+  }
+  nanimate();
+})();
+setLang("zh");});
+btnEn.addEventListener("click",function(){if(currentLang!=="en")setLang("en");});
+
+/* Modal */
+var modalOverlay=document.getElementById("modalOverlay"),modalMedia=document.getElementById("modalMedia"),modalDetails=document.getElementById("modalDetails"),modalClose=document.getElementById("modalClose"),modalPrev=document.getElementById("modalPrev"),modalNext=document.getElementById("modalNext"),currentProject=-1;
+function openModal(index){currentProject=index;var d=index<=4?projectData[index]:idProjects[index-5];var isZh=currentLang==="zh";modalMedia.innerHTML="";if(d.mediaType==="video"){modalMedia.innerHTML='<img src="'+d.videoPoster+'" alt="'+d.title+'" style="width:100%;height:100%;object-fit:cover;"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.3);"><div style="text-align:center;"><svg viewBox="0 0 24 24" fill="rgba(0,229,255,.8)" width="72" height="72"><circle cx="12" cy="12" r="11" fill="none" stroke="rgba(0,229,255,.5)" stroke-width="1"/><polygon points="9,7 9,17 18,12"/></svg><p style="color:var(--cyan);font-family:JetBrains Mono,monospace;font-size:.7rem;margin-top:.8rem;letter-spacing:2px;">'+(isZh?'\u89C6\u9891\u4F5C\u54C1\u5360\u4F4D':'Video Placeholder')+'</p></div></div>';}else{modalMedia.innerHTML='<img src="'+d.media+'" alt="'+d.title+'" style="width:100%;height:100%;object-fit:cover;">';}var typeLabel=isZh?d.typeLabelZh:d.typeLabelEn,desc=isZh?d.descZh:d.descEn,process=isZh?d.processZh:d.processEn,typeClass=d.type==="id"?" type-id":"";modalDetails.innerHTML='<div class="modal-type'+typeClass+'">'+typeLabel+'</div><h2>'+d.title+'</h2><p class="modal-desc">'+desc+'</p><div class="modal-process"><h4>'+(isZh?'\u521B\u4F5C\u8FC7\u7A0B':'Process')+'</h4><p>'+process+'</p></div><div class="modal-tags">'+d.tags.map(function(t){return '<span class="tag">'+t+'</span>';}).join("")+'</div>';modalOverlay.classList.add("open");document.body.classList.add("modal-open");}
+function closeModal(){modalOverlay.classList.remove("open");document.body.classList.remove("modal-open");currentProject=-1;}
+function navModal(dir){if(currentProject<0)return;var n=currentProject+dir;if(n<0)n=8;if(n>8)n=0;openModal(n);}
+modalClose.addEventListener("click",closeModal);modalPrev.addEventListener("click",function(){navModal(-1);});modalNext.addEventListener("click",function(){navModal(1);});modalOverlay.addEventListener("click",function(e){if(e.target===modalOverlay)closeModal();});
+document.addEventListener("keydown",function(e){if(currentProject<0)return;if(e.key==="Escape")closeModal();if(e.key==="ArrowLeft")navModal(-1);if(e.key==="ArrowRight")navModal(1);});
+document.querySelectorAll("[data-project]").forEach(function(card){card.addEventListener("click",function(e){e.stopPropagation();openModal(parseInt(card.getAttribute("data-project")));});});
+
+
+
+
+document.querySelectorAll("a, button, .project-card, .skill-category, .contact-link, .about-avatar, .lang-btn, .modal-close, .modal-nav, .service-card, .feature, .btn-view, .testimonial-card, .number-card, .hiw-step").forEach(function(el){el.addEventListener("mouseenter",function(){cursor.style.transform="translate("+(dx-6)+"px, "+(dy-6)+"px) scale(2)";cursor.style.borderColor="var(--purple)";});el.addEventListener("mouseleave",function(){cursor.style.transform="translate("+(dx-6)+"px, "+(dy-6)+"px) scale(1)";cursor.style.borderColor="var(--cyan)";});});
+
+/* 3D Tilt */
+document.querySelectorAll("[data-tilt]").forEach(function(card){card.addEventListener("mousemove",function(e){var r=card.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,mx2=r.width/2,my2=r.height/2,rx=((y-my2)/my2)*-8,ry=((x-mx2)/mx2)*8;card.style.transform="perspective(1000px) rotateX("+rx+"deg) rotateY("+ry+"deg)";var g=card.querySelector(".card-glow");if(g)g.style.background="radial-gradient(circle at "+x+"px "+y+"px, rgba(0,229,255,.08) 0%, transparent 60%)";});card.addEventListener("mouseleave",function(){card.style.transform="perspective(1000px) rotateX(0) rotateY(0)";var g=card.querySelector(".card-glow");if(g)g.style.background="";});});
+
+/* Hero Glow */
+var heroGlow=document.getElementById("heroGlow"),hero=document.querySelector(".hero");hero.addEventListener("mousemove",function(e){var r=hero.getBoundingClientRect();heroGlow.style.transform="translate(calc(-50% + "+(e.clientX-r.left-r.width/2)+"px), calc(-50% + "+(e.clientY-r.top-r.height/2)+"px))";});
+
+/* Typing */
+var typingEl=document.getElementById("typing");var zhPhrases=["3D\u52A8\u6548\u8BBE\u8BA1\u5E08","\u5DE5\u4E1A\u8BBE\u8BA1\u5E08","\u521B\u610F\u6280\u672F\u4E13\u5BB6"];var enPhrases=["3D Motion Designer","Industrial Designer","Creative Technologist"];var phrases=zhPhrases,phraseIdx=0,charIdx=0,isDeleting=false;function typeEffect(){var c=phrases[phraseIdx];if(isDeleting){typingEl.textContent=c.substring(0,charIdx-1);charIdx--;}else{typingEl.textContent=c.substring(0,charIdx+1);charIdx++;}if(!isDeleting&&charIdx===c.length){isDeleting=true;setTimeout(typeEffect,1500);return;}if(isDeleting&&charIdx===0){isDeleting=false;phraseIdx=(phraseIdx+1)%phrases.length;}setTimeout(typeEffect,isDeleting&&charIdx===0?400:(isDeleting?40:80));}typeEffect();
+
+/* Hero Counters */
+var co=new IntersectionObserver(function(e){e.forEach(function(en){if(en.isIntersecting){var el=en.target,t=+el.dataset.target,s=performance.now();function tick(n){var p=Math.min((n-s)/2000,1);el.textContent=Math.floor(p*t);if(p<1)requestAnimationFrame(tick);}requestAnimationFrame(tick);co.unobserve(el);}});},{threshold:.5});document.querySelectorAll(".hero-stat .num").forEach(function(c){co.observe(c);});
+
+/* Numbers Section Counters */
+var nco=new IntersectionObserver(function(e){e.forEach(function(en){if(en.isIntersecting){var el=en.target,t=parseFloat(el.dataset.num),s=performance.now();function tick(n){var p=Math.min((n-s)/2500,1);el.textContent=t==2.8?(p*t).toFixed(1):Math.floor(p*t);if(p<1)requestAnimationFrame(tick);}requestAnimationFrame(tick);nco.unobserve(el);}});},{threshold:.5});document.querySelectorAll(".number-card [data-num]").forEach(function(c){nco.observe(c);});
+
+/* Skill Bars */
+var so=new IntersectionObserver(function(e){e.forEach(function(en){if(en.isIntersecting){en.target.style.width=en.target.dataset.width+"%";so.unobserve(en.target);}});},{threshold:.3});document.querySelectorAll(".skill-bar-fill").forEach(function(b){b.style.width="0";so.observe(b);});
+
+/* Scroll Reveal */
+var ro=new IntersectionObserver(function(e){e.forEach(function(en){if(en.isIntersecting){en.target.style.opacity="1";en.target.style.transform="translateY(0)";ro.unobserve(en.target);}});},{threshold:.15});document.querySelectorAll("section > .section-tag, .section-header, .about-grid, .feature, .services-grid, .projects-grid, .testimonials-grid, .numbers-row, .timeline, .how-i-work-steps, .skills-container, .contact-inner").forEach(function(el){el.style.opacity="0";el.style.transform="translateY(30px)";el.style.transition="opacity .6s ease-out, transform .6s ease-out";ro.observe(el);});
+
+/* Timeline */
+var tlo=new IntersectionObserver(function(e){e.forEach(function(en){if(en.isIntersecting){en.target.style.opacity="1";en.target.style.transform="translateX(0)";tlo.unobserve(en.target);}});},{threshold:.2});document.querySelectorAll(".timeline-item").forEach(function(el){el.style.opacity="0";el.style.transform="translateX(-20px)";el.style.transition="opacity .5s ease-out, transform .5s ease-out";tlo.observe(el);});
+
+/* Nav Highlight */
+var navLinks=document.querySelectorAll(".nav-links a"),sections=document.querySelectorAll("section[id]");window.addEventListener("scroll",function(){var cur="";sections.forEach(function(s){if(window.scrollY>=s.offsetTop-100)cur=s.id;});navLinks.forEach(function(a){a.style.color=a.getAttribute("href")==="#"+cur?"var(--cyan)":"";});});
+
+document.addEventListener("mouseleave",function(){cursor.style.opacity="0";cursorDot.style.opacity="0";cursorTrail.style.opacity="0";});document.addEventListener("mouseenter",function(){cursor.style.opacity="1";cursorDot.style.opacity="1";});
+
+
+/* Toast */
+var toast=document.getElementById("toast"),toastMsg=document.getElementById("toastMsg"),toastTimer;
+function showToast(msg){toastMsg.textContent=msg;toast.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.classList.remove("show");},1500);}
+
+
+
+/* Node Network Canvas */
+(function(){
+  var nc=document.getElementById("node-canvas"),nctx=nc.getContext("2d");
+  var nw,nh,nodes=[],NODE_COUNT=40,CONN_DIST=160,PULL_RADIUS=220;
+  function nresize(){nw=nc.width=window.innerWidth;nh=nc.height=window.innerHeight;}
+  nresize();window.addEventListener("resize",nresize);
+  function Node(){this.x=Math.random()*nw;this.y=Math.random()*nh;this.ox=this.x;this.oy=this.y;this.vx=0;this.vy=0;this.size=Math.random()*2+1.2;this.phase=Math.random()*Math.PI*2;}
+  for(var i=0;i<NODE_COUNT;i++)nodes.push(new Node());
+  var nmx=nw/2,nmy=nh/2;
+  document.addEventListener("mousemove",function(e){nmx=e.clientX;nmy=e.clientY;});
+  var ntime=0;function nanimate(){ntime+=0.02;
+    nctx.clearRect(0,0,nw,nh);
+    for(var i=0;i<nodes.length;i++){
+      var n=nodes[i];
+      var dx=nmx-n.x,dy=nmy-n.y,dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<PULL_RADIUS&&dist>1){var f=(PULL_RADIUS-dist)/PULL_RADIUS;n.vx+=(dx/dist)*f*.03;n.vy+=(dy/dist)*f*.03;}
+      n.x+=n.vx;n.y+=n.vy;n.vx*=.92;n.vy*=.92;
+      n.x+=(n.ox-n.x)*.003;n.y+=(n.oy-n.y)*.003;
+      for(var j=i+1;j<nodes.length;j++){
+        var ndx=n.x-nodes[j].x,ndy=n.y-nodes[j].y,ndist=Math.sqrt(ndx*ndx+ndy*ndy);
+        if(ndist<CONN_DIST){
+          nctx.beginPath();nctx.moveTo(n.x,n.y);nctx.lineTo(nodes[j].x,nodes[j].y);
+          nctx.strokeStyle="rgba(74,246,38,"+(.25*(1-ndist/CONN_DIST))+")";nctx.lineWidth=.5;nctx.stroke();
+        }
+      }
+      nctx.beginPath();var ps=n.size*(.7+.3*Math.sin(ntime+n.phase));nctx.arc(n.x,n.y,ps,0,Math.PI*2);
+      var pulse=.3+.15*Math.sin(ntime+n.phase);nctx.fillStyle="rgba(74,246,38,"+pulse+")";nctx.fill();
+      nctx.strokeStyle="rgba(74,246,38,.15)";nctx.lineWidth=.8;nctx.stroke();nctx.beginPath();nctx.arc(n.x,n.y,ps+3,0,Math.PI*2);nctx.strokeStyle="rgba(74,246,38,"+(pulse*.15)+")";nctx.lineWidth=1;nctx.stroke();
+    }
+    requestAnimationFrame(nanimate);
+  }
+  nanimate();
+})();
+setLang("zh");
+</script>
+</body>
+</html>
