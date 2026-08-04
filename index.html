@@ -1,0 +1,655 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leo Lomm · Terminal</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;700&display=swap");
+  :root{--bg:#0a0a0a;--surface:#111;--border:#2a2a2a;--green:#4af626;--amber:#ffb000;--text:#c0c0c0;--text-dim:#666;--r:0px}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth;overflow-x:hidden}
+  body{font-family:"JetBrains Mono",monospace;background:var(--bg);color:var(--text);cursor:auto;line-height:1.8;font-size:.85rem}
+  body.modal-open{overflow:hidden}
+  ::selection{background:var(--green);color:#000}
+
+  #bg-canvas{display:none}
+  .content{position:relative;z-index:1}
+
+  
+
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;background:#000;border-bottom:2px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:52px}
+  .nav-logo{font-family:"JetBrains Mono",monospace;font-size:.9rem;font-weight:700;color:var(--green);letter-spacing:1px}
+  .nav-logo::before{content:"> "}
+  .nav-right{display:flex;align-items:center;gap:2rem}
+  .nav-links{display:flex;gap:1.5rem;list-style:none}
+  .nav-links a{color:var(--text-dim);text-decoration:none;font-size:.7rem;transition:color .2s}
+  .nav-links a::before{content:"["} .nav-links a::after{content:"]"}
+  .nav-links a:hover{color:var(--green)}
+  .lang-toggle{display:flex;gap:0;background:#000;border:1px solid var(--border)}
+  .lang-btn{padding:4px 10px;border:none;background:transparent;color:var(--text-dim);cursor:pointer;transition:all .15s;font-family:inherit;font-size:.65rem}
+  .lang-btn.active{background:var(--green);color:#000}
+
+  section{padding:5rem 2rem;max-width:1000px;margin:0 auto;position:relative;border-bottom:1px solid var(--border)}
+  section:last-of-type{border-bottom:none}
+  .section-tag{font-size:.6rem;color:var(--green);margin-bottom:1.5rem;letter-spacing:1px}
+  .section-tag::before{content:"## ";color:var(--text-dim)}
+  .section-header{margin-bottom:2.5rem}
+  .section-header h2{font-size:1.3rem;font-weight:700;margin-bottom:.5rem;color:var(--amber)}
+  .section-header p{color:var(--text-dim);font-size:.75rem;max-width:600px}
+
+  .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:left;flex-direction:column;position:relative;border-bottom:2px solid var(--green)}
+  .hero h1{font-size:3rem;font-weight:700;color:var(--green);line-height:1.2;text-shadow:0 0 20px rgba(74,246,38,.3)}
+  .hero h1::before{content:"whoami";display:block;font-size:.65rem;color:var(--text-dim);margin-bottom:.8rem;font-weight:400;text-shadow:none}
+  .hero .subtitle{margin-top:1rem;font-size:.85rem;color:var(--text-dim)}
+  .hero .typing{color:var(--amber)}
+  .hero .cursor-blink{animation:blink .8s step-end infinite}@keyframes blink{50%{opacity:0}}
+  .hero-stats{display:flex;gap:3rem;margin-top:3rem}
+  .hero-stat{text-align:left}
+  .hero-stat .num{font-size:2rem;font-weight:700;color:var(--amber)}
+  .hero-stat .label{font-size:.6rem;color:var(--text-dim);margin-top:.3rem}
+  .hero-stat .label::before{content:"// "}
+
+  .feature{display:grid;grid-template-columns:1.2fr 1fr;border:1px solid var(--border);background:var(--surface)}
+  .feature-media{position:relative;min-height:380px;background:#000;overflow:hidden}
+  .feature-media img{width:100%;height:100%;object-fit:cover;display:block;opacity:.85}
+  .feature-media .feature-badge{position:absolute;top:12px;left:12px;z-index:3;background:#000;border:1px solid var(--green);padding:3px 10px;font-size:.55rem;color:var(--green)}
+  .feature-info{padding:2rem;display:flex;flex-direction:column;justify-content:center}
+  .feature-info .feature-eyebrow{font-size:.6rem;color:var(--text-dim);margin-bottom:.8rem}
+  .feature-info .feature-eyebrow::before{content:"[ "}.feature-info .feature-eyebrow::after{content:" ]"}
+  .feature-info h2{font-size:1.4rem;font-weight:700;margin-bottom:1rem;color:var(--amber)}
+  .feature-info p{color:var(--text-dim);font-size:.78rem;line-height:1.7;margin-bottom:1.2rem}
+  .feature-info .feature-tags{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem}
+  .feature-info .feature-tags .tag{font-size:.6rem;padding:3px 10px;border:1px solid var(--border);color:var(--green)}
+  .btn-view{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 1.5rem;background:transparent;border:1px solid var(--green);color:var(--green);font-family:inherit;font-size:.7rem;cursor:pointer;transition:all .15s;text-decoration:none;width:fit-content}
+  .btn-view:hover{background:var(--green);color:#000}
+  .btn-view svg{width:14px;height:14px}
+
+  .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:center}
+  .about-avatar{width:100%;max-width:280px;border:1px solid var(--border);overflow:hidden;filter:saturate(60%) brightness(0.7) contrast(1.05)}
+  .about-avatar img{width:100%;display:block}
+  .about-text h2{font-size:1.2rem;font-weight:700;margin-bottom:1.2rem;color:var(--amber)}
+  .about-text h2::before{content:""}.about-text h2::after{content:""}
+  .about-text p{color:var(--text-dim);margin-bottom:.8rem;font-size:.8rem}
+  .about-text .highlight{color:var(--green)}
+  .about-philosophy{margin-top:1.2rem;padding:1rem;border:1px solid var(--border);background:rgba(74,246,38,.02)}
+  .about-philosophy h4{font-size:.65rem;color:var(--green);margin-bottom:.5rem}
+  .about-philosophy h4::before{content:"> "}
+  .about-philosophy p{font-size:.78rem;color:var(--text-dim);margin:0}
+
+  .services-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+  .service-card{background:var(--surface);padding:1.8rem 1.5rem;border:1px solid transparent;transition:border-color .2s}
+  .service-card:hover{border-color:var(--green)}
+  .service-card .svc-icon{margin-bottom:1rem;color:var(--green)}.service-card .svc-icon svg{width:24px;height:24px}
+  .service-card h3{font-size:.9rem;font-weight:700;margin-bottom:.6rem;color:var(--amber)}
+  .service-card ul{list-style:none}
+  .service-card li{font-size:.73rem;color:var(--text-dim);padding:.2rem 0}
+  .service-card li::before{content:"- "}
+
+  .projects-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+  .project-card{background:var(--surface);overflow:hidden;cursor:pointer;border:1px solid transparent;transition:border-color .2s}
+  .project-card:hover{border-color:var(--green)}
+  .project-card .card-glow{display:none}
+  .project-card .card-thumb{width:100%;height:180px;object-fit:cover;display:block;filter:grayscale(80%) contrast(1.1)}
+  .project-card:hover .card-thumb{filter:grayscale(0%)}
+  .project-card .thumb-wrap{position:relative;overflow:hidden}
+  .project-card .video-badge{position:absolute;top:0;right:0;z-index:3;background:var(--green);padding:3px 8px;font-size:.55rem;color:#000;font-weight:700}
+  .project-card .video-badge svg{display:none}
+  .project-card .play-overlay{display:none}
+  .project-info{padding:1.2rem}
+  .project-info h3{font-size:.9rem;font-weight:700;margin-bottom:.3rem}
+  .project-info .tags{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.4rem}
+  .project-info .tag{font-size:.55rem;padding:2px 7px;border:1px solid var(--border);color:var(--text-dim)}
+  .project-info .tag.type-3d{color:var(--green);border-color:var(--green)}
+  .project-info .tag.type-id{color:var(--amber);border-color:var(--amber)}
+
+  .testimonials-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+  .testimonial-card{background:var(--surface);padding:1.8rem 1.5rem}
+  .testimonial-card .t-quote{display:none}
+  .testimonial-card p{font-size:.78rem;color:var(--text);line-height:1.7;margin-bottom:1rem}
+  .testimonial-card p::before{content:"> "}
+  .testimonial-card .t-author{font-size:.7rem;font-weight:700;color:var(--green)}
+  .testimonial-card .t-role{font-size:.65rem;color:var(--text-dim);margin-top:2px}
+
+  .numbers-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border)}
+  .number-card{background:var(--surface);padding:1.8rem 1rem;text-align:center}
+  .number-card .n-value{font-size:2.2rem;font-weight:700;color:var(--amber);line-height:1}
+  .number-card .n-unit{font-size:.65rem;color:var(--amber);margin-left:2px}
+  .number-card .n-label{font-size:.6rem;color:var(--text-dim);margin-top:.3rem}
+
+  .timeline{position:relative;padding-left:1rem}
+  .timeline::before{content:"";position:absolute;left:0;top:0;bottom:0;width:1px;background:var(--green)}
+  .timeline-item{position:relative;padding-bottom:2rem;padding-left:1.5rem}
+  .timeline-item:last-child{padding-bottom:0}
+  .timeline-item::before{content:"";position:absolute;left:-3px;top:5px;width:7px;height:7px;background:var(--green)}
+  .timeline-item .tl-year{font-size:.65rem;color:var(--amber);margin-bottom:.2rem;font-weight:700}
+  .timeline-item h4{font-size:.9rem;font-weight:700;margin-bottom:.2rem}
+  .timeline-item p{font-size:.73rem;color:var(--text-dim)}
+
+  .how-i-work-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border)}
+  .hiw-step{background:var(--surface);padding:2rem 1rem;text-align:left;border:1px solid transparent;transition:border-color .2s}
+  .hiw-step:hover{border-color:var(--green)}
+  .hiw-step .hiw-num{font-size:1.5rem;font-weight:700;color:var(--green);margin-bottom:.8rem;line-height:1}
+  .hiw-step .hiw-num::after{content:"."}
+  .hiw-step h4{font-size:.85rem;font-weight:700;margin-bottom:.4rem;color:var(--amber)}
+  .hiw-step p{font-size:.7rem;color:var(--text-dim)}
+  .hiw-connector{display:none}
+
+  .skills-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--border)}
+  .skill-category{background:var(--surface);padding:1.5rem}
+  .skill-category h3{font-size:.75rem;font-weight:700;color:var(--green);margin-bottom:1rem}
+  .skill-category h3::before{content:"// "}
+  .skill-bar-wrap{margin-bottom:.8rem}
+  .skill-bar-label{display:flex;justify-content:space-between;font-size:.7rem;margin-bottom:4px}
+  .skill-bar{height:3px;background:var(--border);overflow:hidden}
+  .skill-bar-fill{height:100%;background:var(--green);transition:width 1s ease-out}
+
+  .contact-inner{text-align:center}
+  .contact-cta-btn{display:inline-flex;align-items:center;gap:.5rem;margin-top:1.5rem;padding:.7rem 1.8rem;background:transparent;border:1px solid var(--amber);color:var(--amber);font-family:inherit;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .15s;text-decoration:none}
+  .contact-cta-btn:hover{background:var(--amber);color:#000}
+  .contact-cta-btn svg{width:16px;height:16px}
+  .contact-links{display:flex;justify-content:center;gap:1.5rem;margin-top:2rem;flex-wrap:wrap}
+  .contact-link{display:flex;align-items:center;gap:.4rem;padding:.5rem 0;border:none;color:var(--text-dim);text-decoration:none;font-size:.75rem;background:transparent;transition:color .15s}
+  .contact-link:hover{color:var(--green)}
+  .contact-link svg{width:14px;height:14px}
+
+  footer{text-align:center;padding:2rem;border-top:1px solid var(--border);font-size:.65rem;color:var(--text-dim)}
+  footer::before{content:"[EOF]";display:block;color:var(--green);margin-bottom:.5rem}
+
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);z-index:9999;background:#000;border:1px solid var(--green);padding:.8rem 1.5rem;font-family:inherit;font-size:.7rem;color:var(--green);transition:transform .2s ease-out}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast svg{display:none}
+  .toast::before{content:">> "}
+
+  .modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+  .modal-overlay.open{opacity:1;pointer-events:auto}
+  .modal-container{display:grid;grid-template-columns:1.2fr 1fr;width:94vw;max-width:1100px;max-height:88vh;background:var(--surface);border:1px solid var(--green);overflow:hidden}
+  .modal-overlay.open .modal-container{animation:terminalIn .2s ease-out}@keyframes terminalIn{from{transform:scaleY(.9)}to{transform:scaleY(1)}}
+  .modal-media{position:relative;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:400px}
+  .modal-media img,.modal-media video{width:100%;height:100%;object-fit:cover;filter:grayscale(30%)}
+  .modal-details{padding:2rem;display:flex;flex-direction:column;overflow-y:auto}
+  .modal-details h2{font-size:1.4rem;font-weight:700;margin-bottom:.8rem;color:var(--amber)}
+  .modal-details .modal-type{font-size:.6rem;color:var(--green);margin-bottom:1rem}.modal-details .modal-type.type-id{color:var(--amber)}
+  .modal-details .modal-type::before{content:"["}.modal-details .modal-type::after{content:"]"}
+  .modal-details .modal-desc{color:var(--text-dim);font-size:.8rem;line-height:1.7;margin-bottom:1.2rem}
+  .modal-details .modal-process{border-left:1px solid var(--border);padding-left:1rem;margin-bottom:1.2rem}
+  .modal-details .modal-process h4{font-size:.65rem;color:var(--green);margin-bottom:.4rem}
+  .modal-details .modal-process p{color:var(--text-dim);font-size:.75rem}
+  .modal-details .modal-tags{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:auto}
+  .modal-details .modal-tags .tag{font-size:.6rem;padding:3px 10px;border:1px solid var(--border);color:var(--text-dim)}
+  .modal-close{position:absolute;top:12px;right:12px;z-index:10;width:32px;height:32px;background:#000;border:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-family:inherit;font-size:.7rem}
+  .modal-close:hover{border-color:var(--green);color:var(--green)}
+  .modal-close svg{width:14px;height:14px}
+  .modal-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:36px;height:36px;background:#000;border:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+  .modal-nav:hover{border-color:var(--green);color:var(--green)}
+  .modal-nav svg{width:16px;height:16px}
+  .modal-prev{left:10px}.modal-next{right:10px}
+
+  @media(max-width:768px){
+    .hero h1{font-size:2rem}.hero-stats{gap:2rem}
+    nav{padding:0 1rem}.nav-links{gap:1rem}.nav-links a{font-size:.6rem}
+    section{padding:4rem 1rem}
+    .about-grid{grid-template-columns:1fr}.about-avatar{max-width:200px}
+    .feature{grid-template-columns:1fr}.feature-media{min-height:240px}.feature-info{padding:1.5rem}
+    .services-grid{grid-template-columns:1fr}
+    .projects-grid{grid-template-columns:repeat(2,1fr)}
+    .testimonials-grid{grid-template-columns:1fr}
+    .numbers-row{grid-template-columns:repeat(2,1fr)}
+    .how-i-work-steps{grid-template-columns:1fr 1fr}
+    .skills-container{grid-template-columns:1fr}
+    .modal-container{grid-template-columns:1fr;max-height:95vh}.modal-media{min-height:200px}.modal-details{padding:1.5rem}
+  }
+  @media(max-width:480px){.projects-grid{grid-template-columns:1fr}.how-i-work-steps{grid-template-columns:1fr}}
+
+#node-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+
+
+
+</style>
+<canvas id="node-canvas"></canvas><div class="content">
+
+ <nav>
+ <div class="nav-logo" data-zh="&lt;&#26446;&#26126;&#26126; /&gt;" data-en="&lt;Leo Lomm /&gt;">&lt;Leo Lomm /&gt;</div>
+ <div class="nav-right">
+ <ul class="nav-links">
+ <li><a href="#about" data-zh="关于" data-en="About"></a></li>
+ <li><a href="#services" data-zh="服务" data-en="Services"></a></li>
+ <li><a href="#projects" data-zh="作品" data-en="Works"></a></li>
+ <li><a href="#timeline" data-zh="经历" data-en="Journey"></a></li>
+ 
+ <li><a href="#contact" data-zh="联系" data-en="Contact"></a></li>
+ </ul>
+ <div class="lang-toggle">
+ <button class="lang-btn active" data-lang="zh" id="btnZh">中</button>
+ <button class="lang-btn" data-lang="en" id="btnEn">EN</button>
+ </div>
+ </div>
+ </nav>
+
+ <section class="hero" id="hero">
+ <div class="hero-glow" id="heroGlow"></div>
+ <h1 data-zh="&#26446;&#26126;&#26126;" data-en="Leo Lomm">Leo Lomm</h1>
+ <p class="subtitle">&gt; <span class="typing" id="typing"></span><span class="cursor-blink">_</span></p>
+ <div class="hero-stats">
+ <div class="hero-stat"><div class="num" data-target="10">0</div><div class="label" data-zh="年经验" data-en="YRS EXP"></div></div>
+ <div class="hero-stat"><div class="num" data-target="60" style="display:inline">0</div><span style="font-size:1.2rem;font-weight:700;color:var(--amber);">+</span><div class="label" data-zh="个项目" data-en="PROJECTS"></div></div>
+ <div class="hero-stat"><div class="num" data-target="5">0</div><div class="label" data-zh="位客户" data-en="CLIENTS"></div></div>
+ </div>
+ <div class="scroll-indicator"><span></span></div>
+ </section>
+
+ <section id="feature">
+ <div class="section-tag" data-zh="精选聚焦" data-en="Featured Work"></div>
+ <div class="feature">
+ <div class="feature-media">
+ <video src="1.mp4" poster="https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=800&h=500&fit=crop" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>
+ <div class="feature-badge">FEATURED</div>
+ </div>
+ <div class="feature-info">
+ <div class="feature-eyebrow" data-zh="3D 动效设计" data-en="3D Motion Design"></div>
+ <h2 data-zh="粒子流动" data-en="Particle Flow">粒子流动</h2>
+ <p data-zh="探索色彩在三维空间中的流动与折射，通过程序化材质与动态光照创造具有强烈视觉冲击力的抽象动画序列。" data-en="An exploration of color flow and refraction in 3D space, using procedural materials and dynamic lighting to create abstract animation sequences with powerful visual impact."></p>
+ <div class="feature-tags"><span class="tag">Blender</span><span class="tag">After Effects</span><span class="tag">Geometry Nodes</span></div>
+ <button class="btn-view" onclick="openModal(0)"><span data-zh="查看详情" data-en="View Details"></span> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg></button>
+ </div>
+ </div>
+ </section>
+
+ <section id="about">
+ <div class="section-tag" data-zh="关于我" data-en="About Me"></div>
+ <div class="about-grid">
+ <div class="about-avatar"><img src="照片.jpg" alt="Portrait" onerror="this.style.display='none';this.parentElement.innerHTML='<div style=color:var(--cyan);font-size:4rem;font-family:JetBrains+Mono,monospace;padding:4rem>L</div>'"></div>
+ <div class="about-text">
+ <h2 data-zh="3D 动效设计师 &amp; 工业设计师" data-en="3D Motion Designer &amp; Creative Technologist"></h2>
+ <p data-zh="你好！我是 李明明，专注于 3D 动效设计 与 工业设计 的交叉领域。我相信好的设计不仅在纸面上成立，更应该在三维空间中呼吸。多年来，我始终追求将技术精确性与艺术表现力融为一体，在每一个项目中探索形式与功能的最佳平衡点。"" data-en="Hi, I am Li Mingming, working at the intersection of 3D motion design and industrial design. I believe great design breathes in three dimensions, not just on paper. Over the years, I have pursued the fusion of technical precision and artistic expression, exploring the optimal balance between form and function in every project." data-en="Hi, I am Li Mingming, working at the intersection of 3D motion design and industrial design. I believe great design breathes in three dimensions, not just on paper. Over the years, I have pursued the fusion of technical precision and artistic expression, exploring the optimal balance between form and function in every project."</p>
+ <p data-zh="擅长用 3ds Max / Blender / Unity / Rhino 创造动态视觉，也用 C# 与 AI 工具将创意自动化。从产品概念草图到最终渲染动画，覆盖完整的创作管线。对我而言，每一个项目都是一次新的探索——无论是为品牌打造视觉短片，还是将一个产品从概念推向实物，我都享受把抽象的想法转化为可触可感的作品。"" data-en="Skilled in 3ds Max / Blender / Unity / Rhino for motion visuals, and C# with AI tools for creative automation. From concept sketches to final rendered animation, I cover the full creative pipeline. For me, every project is a new exploration—whether crafting a brand visual short or bringing a product from concept to reality, I enjoy turning abstract ideas into tangible, expressive work." data-en="Skilled in 3ds Max / Blender / Unity / Rhino for motion visuals, and C# with AI tools for creative automation. From concept sketches to final rendered animation, I cover the full creative pipeline. For me, every project is a new exploration—whether crafting a brand visual short or bringing a product from concept to reality, I enjoy turning abstract ideas into tangible, expressive work."</p>
+ <div class="about-philosophy">
+  <h4 data-zh="设计信条" data-en="Design Philosophy"></h4>
+  <p data-zh="形式服从功能，但功能需要形式来诉说。每一个像素、每一帧动画都应有它存在的理由。" data-en="Form follows function, but function needs form to speak. Every pixel, every frame of animation must justify its existence."></p>
+ </div>
+ </div>
+ </div>
+ </section>
+
+ <section id="services">
+ <div class="section-tag" data-zh="我能做什么" data-en="What I Can Do"></div>
+ <div class="section-header">
+ <h2 data-zh="跨领域的创作能力" data-en="Cross-Discipline Creative Capabilities"></h2>
+ <p data-zh="三条技能线，一个完整的创意交付链路。" data-en="Three skill tracks, one complete creative delivery pipeline."></p>
+ </div>
+ <div class="services-grid">
+ <div class="service-card">
+ <div class="svc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27,6.96 12,12.01 20.73,6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+ <h3 data-zh="3D 动效设计" data-en="3D Motion Design"></h3>
+ <ul>
+  <li data-zh="产品动画与品牌视觉短片" data-en="Product animation & brand shorts"></li>
+  <li data-zh="抽象动效与动态视觉" data-en="Abstract motion & dynamic visuals"></li>
+  <li data-zh="程序化材质与特效模拟" data-en="Procedural materials & VFX"></li>
+  <li data-zh="动态字体与图形动画" data-en="Kinetic typography & motion graphics"></li>
+ </ul>
+ </div>
+ <div class="service-card">
+ <div class="svc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg></div>
+ <h3 data-zh="工业设计" data-en="Industrial Design"></h3>
+ <ul>
+  <li data-zh="产品概念设计与曲面建模" data-en="Product concept & surface modeling"></li>
+  <li data-zh="参数化设计与结构分析" data-en="Parametric design & structural analysis"></li>
+  <li data-zh="Keyshot 产品级渲染" data-en="Keyshot product-level rendering"></li>
+  <li data-zh="原型制作与设计验证" data-en="Prototyping & design validation"></li>
+ </ul>
+ </div>
+ <div class="service-card">
+ <div class="svc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg></div>
+ <h3 data-zh="Code &amp; AI" data-en="Code &amp; AI"></h3>
+ <ul>
+  <li data-zh="C# 工具与插件开发" data-en="C# tool & plugin development"></li>
+  <li data-zh="OpenAI / GPT 创意流程集成" data-en="OpenAI / GPT creative workflow integration"></li>
+  <li data-zh="AI 图像生成与辅助设计" data-en="AI image generation & design assistance"></li>
+  <li data-zh="Python 自动化脚本" data-en="Python automation scripting"></li>
+ </ul>
+ </div>
+ </div>
+ </section>
+
+ <section id="projects">
+ <div class="section-tag" data-zh="精选作品" data-en="Featured Works"></div>
+ <div class="projects-grid">
+ <div class="project-card" data-project="0"><div class="card-glow"></div><div class="thumb-wrap"><video class="card-thumb" src="1.mp4" muted loop playsinline preload="metadata"></video><div class="video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>VIDEO</div><div class="play-overlay"><svg viewBox="0 0 24 24" fill="rgba(0,229,255,.9)"><circle cx="12" cy="12" r="11" fill="none" stroke="rgba(0,229,255,.4)" stroke-width="1"/><polygon points="9,7 9,17 18,12"/></svg></div></div><div class="project-info"><h3 data-zh="粒子流动" data-en="Particle Flow">粒子流动</h3><div class="tags"><span class="tag type-3d">3D Motion</span><span class="tag">Unity3D</span><span class="tag">C#</span></div></div></div>
+
+ <div class="project-card" data-project="1"><div class="card-glow"></div><div class="thumb-wrap"><video class="card-thumb" src="2.mp4" muted loop playsinline preload="metadata"></video><div class="video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>VIDEO</div><div class="play-overlay"><svg viewBox="0 0 24 24" fill="rgba(0,229,255,.9)"><circle cx="12" cy="12" r="11" fill="none" stroke="rgba(0,229,255,.4)" stroke-width="1"/><polygon points="9,7 9,17 18,12"/></svg></div></div><div class="project-info"><h3 data-zh="驾驶模式" data-en="Driving Mode">驾驶模式</h3><div class="tags"><span class="tag type-3d">3D Motion</span><span class="tag">Unity3D</span><span class="tag">C#</span></div></div></div>
+
+ <div class="project-card" data-project="2"><div class="card-glow"></div><div class="thumb-wrap"><video class="card-thumb" src="3.mp4" muted loop playsinline preload="metadata"></video><div class="video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>VIDEO</div><div class="play-overlay"><svg viewBox="0 0 24 24" fill="rgba(0,229,255,.9)"><circle cx="12" cy="12" r="11" fill="none" stroke="rgba(0,229,255,.4)" stroke-width="1"/><polygon points="9,7 9,17 18,12"/></svg></div></div><div class="project-info"><h3 data-zh="充电效果" data-en="Charging Effect">充电效果</h3><div class="tags"><span class="tag type-3d">3D Motion</span><span class="tag">Unity3D</span><span class="tag">Effect</span></div></div></div>
+
+ <div class="project-card" data-project="3"><div class="card-glow"></div><div class="thumb-wrap"><video class="card-thumb" src="4.mp4" muted loop playsinline preload="metadata"></video><div class="video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>VIDEO</div><div class="play-overlay"><svg viewBox="0 0 24 24" fill="rgba(0,229,255,.9)"><circle cx="12" cy="12" r="11" fill="none" stroke="rgba(0,229,255,.4)" stroke-width="1"/><polygon points="9,7 9,17 18,12"/></svg></div></div><div class="project-info"><h3 data-zh="灯光秀" data-en="Light Show">灯光秀</h3><div class="tags"><span class="tag type-3d">3D Motion</span><span class="tag">Unity3D</span><span class="tag">C#</span></div></div></div>
+
+ <div class="project-card" data-project="4"><div class="card-glow"></div><div class="thumb-wrap"><video class="card-thumb" src="5.mp4" muted loop playsinline preload="metadata"></video><div class="video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>VIDEO</div><div class="play-overlay"><svg viewBox="0 0 24 24" fill="rgba(0,229,255,.9)"><circle cx="12" cy="12" r="11" fill="none" stroke="rgba(0,229,255,.4)" stroke-width="1"/><polygon points="9,7 9,17 18,12"/></svg></div></div><div class="project-info"><h3 data-zh="智慧灯幕" data-en="Smart Light Curtain">智慧灯幕</h3><div class="tags"><span class="tag type-3d">3D Motion</span><span class="tag">Unity3D</span><span class="tag">Effect</span></div></div></div>
+
+ <div class="project-card" data-project="5"><div class="card-glow"></div><div class="thumb-wrap"><video class="card-thumb" src="6.mp4" muted loop playsinline preload="metadata"></video><div class="video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>VIDEO</div><div class="play-overlay"><svg viewBox="0 0 24 24" fill="rgba(0,229,255,.9)"><circle cx="12" cy="12" r="11" fill="none" stroke="rgba(0,229,255,.4)" stroke-width="1"/><polygon points="9,7 9,17 18,12"/></svg></div></div><div class="project-info"><h3 data-zh="随动机器人" data-en="Follow-up Robot">随动机器人</h3><div class="tags"><span class="tag type-id">Industrial</span><span class="tag">Rhino</span><span class="tag">3ds Max</span></div></div></div>
+
+ <div class="project-card" data-project="6"><div class="card-glow"></div><div class="thumb-wrap"><img class="card-thumb" src="A6.jpg" alt="Lightform Lamp" loading="lazy" onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#1a0a0a,#401010)';this.style.minHeight='180px'"></div><div class="project-info"><h3 data-zh="机械长颈鹿" data-en="Mechanical Giraffe">机械长颈鹿</h3><div class="tags"><span class="tag type-id">Industrial</span><span class="tag">3ds Max</span><span class="tag">Vray</span></div></div></div>
+
+ <div class="project-card" data-project="7"><div class="card-glow"></div><div class="thumb-wrap"><img class="card-thumb" src="A7.jpg" alt="Modular Desk" loading="lazy" onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#1a0a0a,#401010)';this.style.minHeight='180px'"></div><div class="project-info"><h3 data-zh="随动机械臂" data-en="Follow-up Robotic Arm">随动机械臂</h3><div class="tags"><span class="tag type-id">Industrial</span><span class="tag">3ds Max</span><span class="tag">Vray</span></div></div></div>
+
+ <div class="project-card" data-project="8"><div class="card-glow"></div><div class="thumb-wrap"><img class="card-thumb" src="A8.jpg" alt="Wearable Concept" loading="lazy" onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#1a0a0a,#401010)';this.style.minHeight='180px'"></div><div class="project-info"><h3 data-zh="车载冰箱水壶" data-en="Car Fridge Bottle">车载冰箱水壶</h3><div class="tags"><span class="tag type-id">Industrial</span><span class="tag">3ds Max</span><span class="tag">Vray</span></div></div></div>
+
+ </div>
+ </section>
+
+ <section id="testimonials">
+ <div class="section-tag" data-zh="项目成果" data-en="Achievements"></div>
+ <div class="section-header">
+ <h2 data-zh="过往项目" data-en="Past Projects"></h2>
+ <p data-zh="在公司期间主导和参与的代表性成果。" data-en="Representative achievements from my time in the company."></p>
+ </div>
+ <div class="testimonials-grid">
+ <div class="testimonial-card">
+ <div class="t-quote">&ldquo;</div>
+ <p data-zh="主导随动机器人的工业设计，从概念设计、3D 渲染到关节结构验证全流程推进，同时负责模型资产的标准化管理与归档。产品被引用到扬州城市形象片《一城三都》。" data-en="Led the industrial design of a follow-up robot, advancing the full pipeline from concept design and 3D rendering to joint structure verification, followed up on prototype production and promotional material output, while managing standardized model asset organization and archiving."></p>
+ <div class="t-author" data-zh="哈工大机器人（扬州）科创中心" data-en="HIT Robot (Yangzhou) Innovation Center"></div>
+ <div class="t-role" data-zh="负责人" data-en="Project Lead"></div>
+ </div>
+ <div class="testimonial-card">
+ <div class="t-quote">&ldquo;</div>
+ <p data-zh="负责极氪 007 汽车的智慧灯幕功能设计与制作，以及极氪 X、007 车型灯光秀的交互功能演示，实现多模式、多场景下的灯幕动态效果展示。" data-en="Led the smart light curtain feature design and production for the ZEEKR 007, along with interactive light show demonstrations for ZEEKR X and 007 models, achieving multi-mode, multi-scenario dynamic light curtain effects."></p>
+ <div class="t-author" data-zh="极氪汽车有限公司" data-en="ZEEKR Automobile Co., Ltd."></div>
+ <div class="t-role" data-zh="主创" data-en="Lead Creator"></div>
+ </div>
+ <div class="testimonial-card">
+ <div class="t-quote">&ldquo;</div>
+ <p data-zh="负责数字孪生板块从 0 到 1 的拓展，制定工作流程并持续优化，显著提升了团队的工作质量与产出效率。负责制作的昆明中储粮项目登上央视报道。" data-en="Led the digital twin division from 0 to 1, established and optimized workflows that significantly improved team quality and efficiency. The Yunnan grain storage project was featured on CCTV."></p>
+ <div class="t-author" data-zh="丰尚智能科技有限公司" data-en="Famsun Intelligent Technology Co., Ltd."></div>
+ <div class="t-role" data-zh="负责人" data-en="Project Lead"></div>
+ </div>
+ </div>
+ </section>
+
+ <section id="numbers">
+ <div class="section-tag" data-zh="数据亮点" data-en="By the Numbers"></div>
+ <div class="numbers-row">
+ <div class="number-card"><div class="n-value"><span data-num="1240">0</span><span class="n-unit">h</span></div><div class="n-label" data-zh="渲染总时长" data-en="Render Hours"></div></div>
+ <div class="number-card"><div class="n-value"><span data-num="37">0</span><span class="n-unit">+</span></div><div class="n-label" data-zh="完成项目" data-en="Projects Done"></div></div>
+ <div class="number-card"><div class="n-value"><span data-num="9">0</span><span class="n-unit"></span></div><div class="n-label" data-zh="掌握工具" data-en="Tools Mastered"></div></div>
+ <div class="number-card"><div class="n-value"><span data-num="2.8">0</span><span class="n-unit">M</span></div><div class="n-label" data-zh="最高模型面数" data-en="Max Poly Count"></div></div>
+ </div>
+ </section>
+
+ <section id="timeline">
+ <div class="section-tag" data-zh="经历" data-en="Journey"></div>
+ <div class="section-header">
+ <h2 data-zh="走过的路" data-en="The Path So Far"></h2>
+ <p data-zh="从工业设计到 3D 动效，每一步都在拓宽创作的边界。" data-en="From industrial design to 3D motion, each step expands the boundaries of creation."></p>
+ </div>
+ <div class="timeline">
+ <div class="timeline-item"><div class="tl-year"><span data-zh="2023~至今" data-en="2023~Present">2023~至今</span></div><h4 data-zh="丰尚智能科技有限公司" data-en="Famsun Intelligent Technology Co., Ltd."></h4><p data-zh="担任 3D 设计工程师，拓展公司数字孪生板块，制定标准化工作流程，并基于项目进行数字资产的创作与管理。" data-en="3D Design Engineer, expanded the company digital twin division, established standardized workflows, and managed digital asset creation and management based on project needs."></p></div>
+ <div class="timeline-item"><div class="tl-year">2022~2023</div><h4 data-zh="极氪汽车有限公司" data-en="ZEEKR Automobile Co., Ltd."></h4><p data-zh="担任产品体验设计师，负责部门 HMI 动效功能模块，平衡性能和视觉效果；负责汽车附件的工业设计，输出设计概念。" data-en="Product experience designer, responsible for HMI motion effect modules, balancing performance and visual quality; handled industrial design for car accessories and output design concepts."></p></div>
+ <div class="timeline-item"><div class="tl-year">2021~2022</div><h4 data-zh="江苏明月智能科技有限公司" data-en="Jiangsu Mingyue Intelligent Technology Co., Ltd."></h4><p data-zh="工业设计负责人，负责公司产品的外观总体设计，并开展产品落地工作事宜。" data-en="Industrial design lead, responsible for overall product appearance design and product implementation."></p></div>
+ <div class="timeline-item"><div class="tl-year">2018~2021</div><h4 data-zh="哈工大机器人（扬州）科创中心" data-en="HIT Robot (Yangzhou) Innovation Center"></h4><p data-zh="负责产品工业设计，展品展项的内容设计，输出概念效果图与宣发物料。" data-en="Responsible for product industrial design, exhibition content design, and output of concept renderings and promotional materials."></p></div>
+ <div class="timeline-item"><div class="tl-year">2017~2018</div><h4 data-zh="扬州蓝白工艺品有限公司" data-en="Yangzhou Blue & White Crafts Co., Ltd."></h4><p data-zh="担任产品设计师，负责公司产品 ID 形象设计。" data-en="Worked as a product designer, responsible for the company product ID and image design."></p></div>
+ <div class="timeline-item"><div class="tl-year">2016</div><h4 data-zh="设计专业毕业" data-en="Graduated in Design"></h4><p data-zh="在南航金城学院系统学习了产品设计方法论、人体工学与产品建模。" data-en="At NUAA Jincheng College, studied product design methodology, ergonomics, and product modeling."></p></div>
+ </div>
+ </section>
+
+ <section id="how-i-work">
+ <div class="section-tag" data-zh="合作流程" data-en="How I Work"></div>
+ <div class="section-header">
+ <h2 data-zh="与团队协作的方式" data-en="How I Collaborate"></h2>
+ <p data-zh="对上级清晰汇报，与同事高效对接，每一步都让项目稳步推进。" data-en="Clear reporting to leadership, efficient handoffs with colleagues, steady progress at every step."></p>
+ </div>
+ <div class="how-i-work-steps">
+ <div class="hiw-step"><div class="hiw-num">1</div><div class="hiw-connector"></div><h4 data-zh="需求对接" data-en="Briefing"></h4><p data-zh="与领导确认项目目标与优先级，明确资源与时间节点，确保方向不偏。" data-en="Align with leadership on project goals and priorities, clarify resources and timeline to stay on track."></p></div>
+ <div class="hiw-step"><div class="hiw-num">2</div><div class="hiw-connector"></div><h4 data-zh="方案评审" data-en="Review"></h4><p data-zh="提交视觉方案或草模供领导评审，收集反馈后快速调整，进入正式制作。" data-en="Present visual proposals or draft models to leadership for review, iterate quickly based on feedback."></p></div>
+ <div class="hiw-step"><div class="hiw-num">3</div><div class="hiw-connector"></div><h4 data-zh="协同执行" data-en="Execute"></h4><p data-zh="与同事分工协作，定期同步进度，及时解决技术卡点，保证质量与节奏。" data-en="Collaborate with colleagues across disciplines, sync progress regularly, resolve technical blockers promptly."></p></div>
+ <div class="hiw-step"><div class="hiw-num">4</div><h4 data-zh="交付汇报" data-en="Deliver"></h4><p data-zh="输出最终成果并向领导汇报，提供多格式源文件与交接文档，便于后续维护。" data-en="Deliver final outputs and report to leadership, provide multi-format source files and handoff documentation for future maintenance."></p></div>
+ </div>
+ </section>
+
+ <section id="skills">
+ <div class="section-tag" data-zh="技能" data-en="Skills"></div>
+ <div class="skills-container">
+ <div class="skill-category">
+ <h3>// 3D &amp; Motion</h3>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>Shader</span><span>92%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="92"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>3ds Max</span><span>85%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="85"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>After Effects</span><span>90%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="90"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>Unity3D</span><span>88%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="88"></div></div></div>
+ </div>
+ <div class="skill-category">
+ <h3>// Code &amp; AI Tools</h3>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>C#</span><span>78%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="78"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>OpenAI / GPT</span><span>82%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="82"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>Python Scripting</span><span>70%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="70"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>AI Image Gen</span><span>85%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="85"></div></div></div>
+ </div>
+ <div class="skill-category">
+ <h3>// Industrial Design</h3>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>Rhino 3D</span><span>80%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="80"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>3ds Max</span><span>75%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="75"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>Sketching</span><span>90%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="90"></div></div></div>
+ <div class="skill-bar-wrap"><div class="skill-bar-label"><span>Prototyping</span><span>82%</span></div><div class="skill-bar"><div class="skill-bar-fill" data-width="82"></div></div></div>
+ </div>
+ </div>
+ </section>
+
+ 
+
+ <section id="contact">
+ <div class="contact-inner">
+ <div class="section-tag" data-zh="联系我" data-en="Get In Touch"></div>
+ <h2 style="font-size:2rem;margin-bottom:1rem;" data-zh="一起创造点什么" data-en="Let us Build Something"></h2>
+ <p style="color:var(--text-dim);max-width:500px;margin:0 auto;" data-zh="无论是一个品牌短片、一个产品概念，还是一段需要赋能的创意——我都很乐意聊聊。" data-en="Whether it is a brand short, a product concept, or a creative vision that needs bringing to life——I would love to chat."></p>
+ <a href="李明明作品集.pdf" class="contact-cta-btn" download>
+ <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+ <span data-zh="下载作品集 PDF" data-en="Download Portfolio PDF"></span>
+ </a>
+ <div class="contact-links">
+ <a href="#" class="contact-link" id="linkWechat" onclick="navigator.clipboard.writeText('LommLomm').then(function(){showToast('\u5DF2\u590D\u5236 \u2714');});return false;">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+  <span>WeChat</span>
+ </a>
+ <a href="mailto:lomm1994@163.com" class="contact-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg><span>lomm1994@163.com</span></a>
+ <a href="#" class="contact-link" onclick="navigator.clipboard.writeText('15605258510').then(function(){showToast('已复制 ✓');});return false;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>156-0525-8510</span>
+ </a>
+ </div>
+ </div>
+ </section>
+
+ <footer>
+ <p data-zh="&copy; 2026 &#26446;&#26126;&#26126; &mdash; 用热爱与代码构建。" data-en="&copy; 2026 Leo Lomm &mdash; Built with passion &amp; code."></p>
+ </footer>
+
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+ <div class="modal-container" id="modalContainer">
+ <button class="modal-close" id="modalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+ <button class="modal-nav modal-prev" id="modalPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg></button>
+ <button class="modal-nav modal-next" id="modalNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg></button>
+ <div class="modal-media" id="modalMedia"></div>
+ <div class="modal-details" id="modalDetails"></div>
+ </div>
+</div>
+
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg><span id="toastMsg"></span></div>
+
+
+<script>
+"use strict";
+
+/* Project Data */
+var projectData=[{title:"\u7C92\u5B50\u6D41\u52A8",titleEn:"Particle Flow",type:"3d",typeLabelZh:"3D \u52A8\u6548\u8BBE\u8BA1",typeLabelEn:"3D Motion Design",media:"1.mp4",mediaType:"video",videoPoster:"https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=1200&h=700&fit=crop",descZh:"\u901A\u8FC7\u7C92\u5B50\u6D88\u6563\u548C\u989C\u8272\u566A\u58F0\u6E10\u53D8\u534F\u540C\uFF0C\u4ECE\u800C\u8BA9\u6C7D\u8F66\u989C\u8272\u6539\u53D8\u3002\u5229\u7528\u7A0B\u5E8F\u5316\u63A7\u5236\u7C92\u5B50\u7CFB\u7EDF\u7684\u751F\u547D\u5468\u671F\u4E0E\u8FD0\u52A8\u8F68\u8FF9\uFF0C\u914D\u5408\u566A\u58F0\u589E\u76CA\u4E0E\u6E10\u53D8\u901F\u7387\u7684\u5B9E\u65F6\u8C03\u6574\uFF0C\u5B9E\u73B0\u8F66\u8EAB\u989C\u8272\u7684\u6D41\u52A8\u5F0F\u8F6C\u53D8\u3002",descEn:"Particle dissipation and color noise gradient work together to dynamically change the car color. By programmatically controlling particle lifecycle and motion trajectories, combined with real-time noise gain and gradient rate adjustments, the car body color achieves a fluid, organic transformation.",processZh:"\u57283ds Max \u4E2D\u5BF9\u8F66\u6A21\u8FDB\u884C\u91CD\u65B0\u5E03\u7EBF\uFF0C\u8F7B\u91CF\u5316\u8F66\u6A21\u5E76\u91CD\u65B0\u6392\u5E03UV\u3002\u8F6C\u5230Unity3D\u4E2D\uFF0C\u7528C#\u7F16\u5199\u7C92\u5B50\u7CFB\u7EDF\u4E0E\u7740\u8272\u5668\u811A\u672C\uFF0C\u5B9E\u73B0\u566A\u58F0\u9A71\u52A8\u7684\u6E10\u53D8\u52A8\u753B\u3002\u6700\u7EC8\u5728\u5B9E\u65F6\u6E32\u67D3\u73AF\u5883\u4E2D\u8C03\u4F18\u6027\u80FD\u4E0E\u89C6\u89C9\u6548\u679C\u3002",processEn:"Rewired the car model in 3ds Max, optimized the mesh and re-laid UVs. Transferred to Unity3D, wrote C# scripts for the particle system and shader logic, implementing noise-driven gradient animation. Final performance and visual tuning done in the real-time rendering environment.",tags:["Unity3D","C#","3ds Max"]},{title:"\u9A7E\u9A76\u6A21\u5F0F",titleEn:"Driving Mode",type:"3d",typeLabelZh:"3D \u52A8\u6548\u8BBE\u8BA1",typeLabelEn:"3D Motion Design",media:"2.mp4",mediaType:"video",videoPoster:"https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&h=700&fit=crop",descZh:"\u9488\u5BF9\u6C7D\u8F66\u7684\u591A\u79CD\u9A7E\u9A76\u6A21\u5F0F\uFF0C\u8BBE\u8BA1\u4E86\u4E00\u7EC4\u52A8\u6001\u7279\u6548\uFF0C\u4EE5\u6D41\u52A8\u7EBF\u6761\u6A21\u62DF\u98CE\u9053\u7684\u6C14\u6D41\u8D70\u5411\u3002\u6BCF\u79CD\u6A21\u5F0F\u5BF9\u5E94\u72EC\u7279\u7684\u7C92\u5B50\u884C\u4E3A\u4E0E\u8272\u5F69\u65B9\u6848\uFF0C\u5F3A\u5316\u9A7E\u9A76\u4F53\u9A8C\u7684\u89C6\u89C9\u53CD\u9988\u3002",descEn:"Designed a set of dynamic visual effects for different driving modes, using flowing lines to simulate wind tunnel airflow. Each mode features unique particle behavior and color schemes, enhancing the visual feedback of the driving experience.",processZh:"\u57283ds Max\u4E2D\u5B8C\u6210\u8F66\u6A21\u8F7B\u91CF\u5316\u4E0EUV\u91CD\u65B0\u6392\u5E03\uFF0C\u786E\u4FDD\u6A21\u578B\u5728\u5B9E\u65F6\u6E32\u67D3\u4E2D\u7684\u6027\u80FD\u8868\u73B0\u3002\u8F6C\u5165Unity3D\u540E\uFF0C\u7528C#\u7F16\u5199\u9A7E\u9A76\u6A21\u5F0F\u5207\u6362\u903B\u8F91\u4E0E\u7279\u6548\u63A7\u5236\u5668\uFF0C\u5B9E\u73B0\u4E0D\u540C\u6A21\u5F0F\u4E0B\u7684\u52A8\u6001\u89C6\u89C9\u8FC7\u6E21\u3002",processEn:"Optimized the car model and re-laid UVs in 3ds Max for real-time rendering performance. Transferred to Unity3D, wrote C# scripts for driving mode switching logic and effect controllers, achieving seamless dynamic visual transitions across modes.",tags:["Unity3D","C#","3ds Max"]},{title:"\u5145\u7535\u6548\u679C",titleEn:"Charging Effect",type:"3d",typeLabelZh:"3D \u52A8\u6548\u8BBE\u8BA1",typeLabelEn:"3D Motion Design",media:"3.mp4",mediaType:"video",videoPoster:"https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200&h=700&fit=crop",descZh:"\u6A21\u62DF\u65B0\u80FD\u6E90\u6C7D\u8F66\u5728\u5145\u7535\u65F6\u7684\u89C6\u89C9\u6548\u679C\uFF0C\u901A\u8FC7\u79D1\u6280\u611F\u56FE\u5F62\u5728\u8F66\u8EAB\u8868\u9762\u7684\u6D41\u52A8\u4E0E\u8109\u52A8\uFF0C\u76F4\u89C2\u4F20\u8FBE\u80FD\u91CF\u6CE8\u5165\u7684\u8FC7\u7A0B\u3002\u7ED3\u5408\u53D1\u5149\u7EBF\u6761\u4E0E\u6570\u5B57\u5316\u7C92\u5B50\uFF0C\u8425\u9020\u51FA\u5145\u6EE1\u672A\u6765\u611F\u7684\u5145\u7535\u4F53\u9A8C\u3002",descEn:"Simulates the visual effect of a new energy vehicle during charging. Sci-fi inspired graphics flow and pulse across the car body, intuitively conveying the energy infusion process. Glowing lines and digital particles combine to create a futuristic charging experience.",processZh:"\u8BBE\u8BA1\u4E86\u4E00\u79CD\u79D1\u6280\u56FE\u5F62\u5728\u8F66\u8EAB\u4E0A\u6D41\u52A8\uFF0C\u4EE5\u8868\u8FBE\u51FA\u5145\u7535\u7684\u89C6\u89C9\u6548\u679C\u3002\u57283ds Max\u4E2D\u5B8C\u6210\u8F66\u6A21\u4F18\u5316\u4E0E\u8DEF\u5F84\u52A8\u753B\u9884\u5904\u7406\uFF0C\u8F6C\u5165Unity3D\u7528C#\u5B9E\u73B0\u56FE\u5F62\u7684\u52A8\u6001\u63A7\u5236\u4E0E\u5149\u6548\u6E32\u67D3\u3002",processEn:"Designed sci-fi graphics that flow across the car body to visualize the charging effect. Optimized the car model and pre-processed path animations in 3ds Max, then transferred to Unity3D for C#-driven dynamic control and real-time lighting.",tags:["Unity3D","C#","3ds Max"]},{title:"\u706F\u5149\u79C0",titleEn:"Light Show",type:"3d",typeLabelZh:"3D \u52A8\u6548\u8BBE\u8BA1",typeLabelEn:"3D Motion Design",media:"4.mp4",mediaType:"video",videoPoster:"https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=1200&h=700&fit=crop",descZh:"\u6839\u636E\u9009\u62E9\u7684\u6B4C\u66F2\uFF0C\u8C03\u7528\u4E0D\u540C\u7684\u706F\u5149\u6A21\u5F0F\u2014\u2014\u6E10\u4EAE\u3001\u6E10\u6697\u3001\u64E6\u62ED\u7B49\u6548\u679C\uFF0C\u914D\u5408\u6B4C\u66F2\u7684\u9F13\u70B9\u4E0E\u65CB\u5F8B\u5B9E\u65F6\u53D8\u5316\uFF0C\u521B\u4F5C\u51FA\u4E0E\u97F3\u4E50\u8282\u594F\u6DF1\u5EA6\u5951\u5408\u7684\u6C89\u6D78\u5F0F\u706F\u5149\u79C0\u3002",descEn:"Based on the selected song, different lighting modes are triggered ? fade-in, fade-out, wipe, and more ? synchronized with the song beat and melody in real time, creating an immersive light show deeply tied to the music rhythm.",processZh:"\u5728Unity\u4E2D\u7528C#\u9884\u5148\u7F16\u5199\u5404\u79CD\u706F\u5149\u6A21\u5F0F\u6A21\u5757\uFF0C\u5305\u62EC\u6E10\u4EAE\u3001\u6E10\u6697\u3001\u64E6\u62ED\u3001\u95EA\u70C1\u7B49\u591A\u79CD\u6548\u679C\u3002\u901A\u8FC7\u97F3\u4E50\u5206\u6790\u7B97\u6CD5\u63D0\u53D6\u6B4C\u66F2\u7684\u9F13\u70B9\u4E0E\u65CB\u5F8B\u7279\u5F81\uFF0C\u52A8\u6001\u8C03\u7528\u5BF9\u5E94\u6A21\u5F0F\uFF0C\u5B9E\u73B0\u706F\u5149\u4E0E\u97F3\u4E50\u7684\u5B9E\u65F6\u8054\u52A8\u3002",processEn:"Pre-built various lighting mode modules in Unity with C#, including fade-in, fade-out, wipe, and strobe effects. A music analysis algorithm extracts beat and melody features from the song, dynamically triggering corresponding modes for real-time audio-visual synchronization.",tags:["Unity3D","C#","3ds Max"]},{title:"\u667A\u6167\u706F\u5E55",titleEn:"Smart Light Curtain",type:"3d",typeLabelZh:"3D \u52A8\u6548\u8BBE\u8BA1",typeLabelEn:"3D Motion Design",media:"5.mp4",mediaType:"video",videoPoster:"https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=1200&h=700&fit=crop",descZh:"\u5C06\u7528\u6237\u5728\u5C4F\u5E55\u753B\u677F\u4E0A\u7684\u7ED8\u753B\u5185\u5BB9\u5B9E\u65F6\u540C\u6B65\u663E\u793A\u5728\u8F66\u6A21\u706F\u5E55\u4E0A\uFF0C\u4E5F\u53EF\u521B\u4F5C\u81EA\u5DF1\u559C\u6B22\u7684\u56FA\u5B9A\u56FE\u6848\u8FDB\u884C\u5C55\u793A\u3002\u901A\u8FC7\u89E6\u63A7\u4E0E\u7C92\u5B50\u7279\u6548\u7684\u8054\u52A8\uFF0C\u8BA9\u6BCF\u4E00\u7B14\u5212\u90FD\u4F34\u968F\u7740\u6D41\u5149\u6EA2\u5F69\u7684\u89C6\u89C9\u53CD\u9988\u3002",descEn:"Real-time synchronization of user drawings from a screen canvas onto the car light curtain. Users can also create and display their own fixed patterns. Touch input drives particle effects, making every stroke come alive with flowing light feedback.",processZh:"\u5C06\u5C4F\u5E55\u753B\u677F\u6620\u5C04\u5230\u8F66\u6A21\u706F\u5E55\uFF0C\u901A\u8FC7\u89E6\u63A7\u91C7\u96C6\u5750\u6807\u5E76\u5B9E\u65F6\u4F20\u8F93\u81F3\u6E32\u67D3\u7AEF\u3002\u7528\u7C92\u5B50\u7279\u6548\u8DDF\u968F\u89E6\u63A7\u8F68\u8FF9\u5B9E\u73B0\u8054\u52A8\uFF0C\u540C\u65F6\u652F\u6301\u9884\u8BBE\u56FE\u6848\u7684\u5BFC\u5165\u4E0E\u5FAA\u73AF\u64AD\u653E\u3002",processEn:"Mapped the screen canvas to the car light curtain, collecting touch coordinates and transmitting them to the renderer in real time. Particle effects follow the touch trajectory for synchronized animation, with support for importing and looping preset patterns.",tags:["Unity3D","C#","3ds Max"]}];
+var idProjects=[{title:"随动机器人",type:"id",typeLabelZh:"\u5DE5\u4E1A\u8BBE\u8BA1",typeLabelEn:"Industrial Design",media:"6.mp4",mediaType:"video",videoPoster:"https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200&h=700&fit=crop",descZh:"\u968F\u52A8\u673A\u5668\u4EBA\uFF0C\u901A\u8FC7\u667A\u80FD\u611F\u5E94\u7CFB\u7EDF\u5B9E\u73B0\u4EBA\u673A\u534F\u4F5C\uFF0C\u63A2\u7D22\u672A\u6765\u4EA4\u4E92\u7684\u65B0\u53EF\u80FD\u6027\u3002\u8BBE\u8BA1\u7075\u611F\u6765\u6E90\u4E8E\u81EA\u7136\u754C\u4E2D\u7684\u968F\u52A8\u8FD0\u52A8\u673A\u5236\uFF0C\u5C06\u751F\u7269\u7684\u6D41\u7545\u59FF\u6001\u4E0E\u5DE5\u4E1A\u8BBE\u8BA1\u8BED\u8A00\u76F8\u878D\u5408\uFF0C\u6253\u9020\u5177\u6709\u751F\u547D\u611F\u7684\u673A\u68B0\u7F8E\u5B66\u3002",descEn:"A follow-up robot exploring future human-machine interaction through intelligent response systems.",processZh:"\u7ADE\u54C1\u8C03\u7814\uFF0C\u624B\u7ED8\u539F\u578B\uFF0CRhino/3ds Max\u5EFA\u6A21\uFF0CVray\u6E32\u67D3\u3002\u901A\u8FC7\u53CD\u590D\u8FED\u4EE3\u4F18\u5316\u7ED3\u6784\u8282\u70B9\u4E0E\u8FD0\u52A8\u8F68\u8FF9\uFF0C\u7ED3\u54083D\u6253\u5370\u539F\u578B\u9A8C\u8BC1\u4EBA\u673A\u5DE5\u7A0B\u53C2\u6570\uFF0C\u6700\u7EC8\u5B8C\u6210\u4ECE\u6982\u5FF5\u5230\u5B9E\u7269\u7684\u5B8C\u6574\u8BBE\u8BA1\u95ED\u73AF\u3002",processEn:"Competitive research, hand-drawn prototypes, Rhino/3ds Max modeling, Vray rendering",tags:["3ds Max","Rhino","Vray"]},{title:"\u673A\u68B0\u957F\u9888\u9E7F",titleEn:"Mechanical Giraffe",type:"id",typeLabelZh:"\u5DE5\u4E1A\u8BBE\u8BA1",typeLabelEn:"Industrial Design",media:"A6.jpg",mediaType:"image",descZh:"\u6A21\u62DF\u70ED\u5E26\u6C14\u5019\u73AF\u5883\u7279\u5F81\uFF0C\u901A\u8FC7\u8FDC\u7A0B\u63A7\u5236\u6280\u672F\u642D\u914D\u89E6\u63A7\u5C4F\u5E55\uFF0C\u5373\u53EF\u64CD\u63A7\u673A\u68B0\u957F\u9888\u9E7F\u5B8C\u6210\u5BF9\u5E94\u52A8\u4F5C\u3002\u878D\u5408\u751F\u6001\u5C55\u793A\u4E0E\u4EA4\u4E92\u8BBE\u8BA1\uFF0C\u4E3A\u89C2\u4F17\u5E26\u6765\u6C89\u6D78\u5F0F\u7684\u81EA\u7136\u4F53\u9A8C\u3002",descEn:"Simulates tropical climate environments, using remote control technology paired with a touch screen to operate the mechanical giraffe. Blending ecological exhibition with interactive design for an immersive natural experience.",processZh:"\u9996\u5148\u8FDB\u884C\u70ED\u5E26\u751F\u6001\u8C03\u7814\u4E0E\u673A\u68B0\u7ED3\u6784\u6982\u5FF5\u8BBE\u8BA1\uFF0C\u786E\u5B9A\u957F\u9888\u9E7F\u7684\u8FD0\u52A8\u8282\u70B9\u4E0E\u4F20\u52A8\u65B9\u6848\u3002\u57283ds Max\u4E2D\u5B8C\u6210\u673A\u68B0\u5EFA\u6A21\u4E0E\u52A8\u753B\u9A8C\u8BC1\uFF0C\u540C\u6B65\u5F00\u53D1\u8FDC\u7A0B\u63A7\u5236\u7CFB\u7EDF\u4E0E\u89E6\u63A7\u754C\u9762\uFF0C\u6700\u7EC8\u7EC4\u88C5\u5B9E\u7269\u5E76\u8FDB\u884C\u591A\u573A\u666F\u52A8\u4F5C\u8054\u8C03\u6D4B\u8BD5\u3002",processEn:"Conducted tropical ecology research and mechanical structure concept design, defining motion nodes and transmission solutions. Built the mechanical model and validated animations in 3ds Max, developed remote control system and touch interface in parallel, then assembled the physical prototype and conducted multi-scenario motion coordination tests.",tags:["3ds Max","Keyshot","Lighting"]},{title:"\u968F\u52A8\u673A\u68B0\u81C2",titleEn:"Follow-up Robotic Arm",type:"id",typeLabelZh:"\u5DE5\u4E1A\u8BBE\u8BA1",typeLabelEn:"Industrial Design",media:"A7.jpg",mediaType:"image",descZh:"\u673A\u68B0\u624B\u81C2\u8BBE\u8BA1\u7684\u6982\u5FF5\u56FE\u7EB8\uFF0C\u63A2\u7D22\u5DE5\u4E1A\u673A\u68B0\u4E0E\u751F\u7269\u5F62\u6001\u7684\u878D\u5408\u53EF\u80FD\u3002\u901A\u8FC7\u7CBE\u7EC6\u7684\u7ED3\u6784\u8BBE\u8BA1\u4E0E\u5173\u8282\u4F20\u52A8\u65B9\u6848\uFF0C\u6253\u9020\u517C\u5177\u529B\u91CF\u611F\u4E0E\u7075\u6D3B\u6027\u7684\u968F\u52A8\u673A\u68B0\u81C2\u6982\u5FF5\u3002",descEn:"Concept drawings for a mechanical arm design, exploring the fusion of industrial mechanics and organic forms. Precision structural design and joint transmission solutions create a follow-up robotic arm that balances strength with flexibility.",processZh:"\u5E7F\u6CDB\u641C\u96C6\u673A\u68B0\u624B\u81C2\u53C2\u8003\u8D44\u6599\uFF0C\u786E\u5B9A\u8BBE\u8BA1\u65B9\u5411\u4E0E\u7ED3\u6784\u65B9\u6848\u3002\u57283ds Max\u4E2D\u5B8C\u6210\u7CBE\u786E\u5EFA\u6A21\uFF0C\u53CD\u590D\u8C03\u6574\u6750\u8D28\u4E0E\u5149\u7167\u53C2\u6570\uFF0C\u6700\u7EC8\u8F93\u51FA\u9AD8\u8D28\u91CF\u6E32\u67D3\u56FE\u3002",processEn:"Collected extensive mechanical arm references to define the design direction. Built the precise model in 3ds Max, iteratively refined materials and lighting parameters, and produced high-quality final renders.",tags:["3ds Max","Vray","Lighting"]},{title:"\u8F66\u8F7D\u51B0\u7BB1\u6C34\u58F6",titleEn:"Car Fridge Bottle",type:"id",typeLabelZh:"\u5DE5\u4E1A\u8BBE\u8BA1",typeLabelEn:"Industrial Design",media:"A8.jpg",mediaType:"image",descZh:"\u4E3B\u8981\u9002\u7528\u4E8E\u8F66\u8F7D\u51B0\u7BB1\u7ED3\u6784\u7684\u6C34\u58F6\u8BBE\u8BA1\uFF0C\u901A\u8FC7\u7CBE\u786E\u7684\u5C3A\u5BF8\u89C4\u5212\u6700\u5927\u5316\u5229\u7528\u8F66\u8F7D\u51B0\u7BB1\u7A7A\u95F4\uFF0C\u540C\u65F6\u4F18\u5316\u58F6\u4F53\u9020\u578B\u4E0E\u63E1\u6301\u4F53\u9A8C\uFF0C\u786E\u4FDD\u5355\u624B\u5373\u53EF\u65B9\u4FBF\u62FF\u53D6\u3002",descEn:"A water bottle design optimized for car refrigerator compartments. Precise dimension planning maximizes storage space utilization, while the body shape and grip are refined for easy one-handed access.",processZh:"\u9996\u5148\u7CBE\u786E\u6D4B\u91CF\u8F66\u8F7D\u51B0\u7BB1\u7684\u5B9E\u9645\u53EF\u7528\u7A7A\u95F4\u5C3A\u5BF8\uFF0C\u786E\u5B9A\u6C34\u58F6\u7684\u5916\u5F62\u4E0E\u5BB9\u91CF\u53C2\u6570\u3002\u7ED3\u5408\u6781\u6C2A\u54C1\u724C\u8BBE\u8BA1\u5143\u7D20\uFF0C\u57283ds Max\u4E2D\u5B8C\u6210\u5EFA\u6A21\u4E0E\u6750\u8D28\u8C03\u6574\uFF0C\u6700\u7EC8\u6E32\u67D3\u51FA\u5177\u6709\u54C1\u724C\u8BC6\u522B\u5EA6\u7684\u6982\u5FF5\u6548\u679C\u56FE\u3002",processEn:"Measured the actual available space of the car refrigerator to determine the bottle shape and capacity. Integrated ZEEKR brand design elements, modeled and refined materials in 3ds Max, and rendered concept visuals with strong brand identity.",tags:["3ds Max","Vray","Lighting"]}];
+
+
+/* Language */
+var currentLang="zh",btnZh=document.getElementById("btnZh"),btnEn=document.getElementById("btnEn");
+function setLang(lang){currentLang=lang;btnZh.classList.toggle("active",lang==="zh");btnEn.classList.toggle("active",lang==="en");document.querySelectorAll("[data-zh][data-en]").forEach(function(el){el.textContent=el.getAttribute("data-"+lang);});document.title=lang==="zh"?"李明明 · Terminal":"Leo Lomm · Terminal";phrases=lang==="zh"?zhPhrases:enPhrases;phraseIdx=0;charIdx=0;isDeleting=false;typingEl.textContent="";}
+btnZh.addEventListener("click",function(){if(currentLang!=="zh")
+/* Toast */
+var toast=document.getElementById("toast"),toastMsg=document.getElementById("toastMsg"),toastTimer;
+function showToast(msg){toastMsg.textContent=msg;toast.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.classList.remove("show");},1500);}
+
+
+
+/* Node Network Canvas */
+(function(){
+  var nc=document.getElementById("node-canvas"),nctx=nc.getContext("2d");
+  var nw,nh,nodes=[],NODE_COUNT=40,CONN_DIST=160,PULL_RADIUS=220;
+  function nresize(){nw=nc.width=window.innerWidth;nh=nc.height=window.innerHeight;}
+  nresize();window.addEventListener("resize",nresize);
+  function Node(){this.x=Math.random()*nw;this.y=Math.random()*nh;this.ox=this.x;this.oy=this.y;this.vx=0;this.vy=0;this.size=Math.random()*2+1.2;this.phase=Math.random()*Math.PI*2;}
+  for(var i=0;i<NODE_COUNT;i++)nodes.push(new Node());
+  var nmx=nw/2,nmy=nh/2;
+  document.addEventListener("mousemove",function(e){nmx=e.clientX;nmy=e.clientY;});
+  var ntime=0;function nanimate(){ntime+=0.02;
+    nctx.clearRect(0,0,nw,nh);
+    for(var i=0;i<nodes.length;i++){
+      var n=nodes[i];
+      var dx=nmx-n.x,dy=nmy-n.y,dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<PULL_RADIUS&&dist>1){var f=(PULL_RADIUS-dist)/PULL_RADIUS;n.vx+=(dx/dist)*f*.03;n.vy+=(dy/dist)*f*.03;}
+      n.x+=n.vx;n.y+=n.vy;n.vx*=.92;n.vy*=.92;
+      n.x+=(n.ox-n.x)*.003;n.y+=(n.oy-n.y)*.003;
+      for(var j=i+1;j<nodes.length;j++){
+        var ndx=n.x-nodes[j].x,ndy=n.y-nodes[j].y,ndist=Math.sqrt(ndx*ndx+ndy*ndy);
+        if(ndist<CONN_DIST){
+          nctx.beginPath();nctx.moveTo(n.x,n.y);nctx.lineTo(nodes[j].x,nodes[j].y);
+          nctx.strokeStyle="rgba(74,246,38,"+(.25*(1-ndist/CONN_DIST))+")";nctx.lineWidth=.5;nctx.stroke();
+        }
+      }
+      nctx.beginPath();var ps=n.size*(.7+.3*Math.sin(ntime+n.phase));nctx.arc(n.x,n.y,ps,0,Math.PI*2);
+      var pulse=.3+.15*Math.sin(ntime+n.phase);nctx.fillStyle="rgba(74,246,38,"+pulse+")";nctx.fill();
+      nctx.strokeStyle="rgba(74,246,38,.15)";nctx.lineWidth=.8;nctx.stroke();nctx.beginPath();nctx.arc(n.x,n.y,ps+3,0,Math.PI*2);nctx.strokeStyle="rgba(74,246,38,"+(pulse*.15)+")";nctx.lineWidth=1;nctx.stroke();
+    }
+    requestAnimationFrame(nanimate);
+  }
+  nanimate();
+})();
+setLang("zh");});
+btnEn.addEventListener("click",function(){if(currentLang!=="en")setLang("en");});
+
+
+/* Video Card Thumbnails ? poster capture + hover play */
+(function(){
+  var cardVideos = document.querySelectorAll('.project-card .thumb-wrap video.card-thumb');
+  cardVideos.forEach(function(video){
+    var captured = false;
+    video.addEventListener('loadeddata', function(){
+      if (!captured) {
+        video.currentTime = 1.5;
+        captured = true;
+      }
+    });
+    // Handle case where metadata already loaded before script ran
+    if (!captured && video.readyState >= 1) {
+      captured = true;
+      video.currentTime = 1.5;
+    }
+    video.addEventListener('seeked', function(){
+      if (!video.poster && video.videoWidth > 0) {
+        var c = document.createElement('canvas');
+        c.width = video.videoWidth;
+        c.height = video.videoHeight;
+        c.getContext('2d').drawImage(video, 0, 0);
+        video.poster = c.toDataURL();
+      }
+    });
+    // Hover play/pause
+    var card = video.closest('.project-card');
+    if (card) {
+      card.addEventListener('mouseenter', function(){
+        video.play().catch(function(){});
+      });
+      card.addEventListener('mouseleave', function(){
+        video.pause();
+      });
+    }
+  });
+})();
+
+/* Modal */
+var modalOverlay=document.getElementById("modalOverlay"),modalMedia=document.getElementById("modalMedia"),modalDetails=document.getElementById("modalDetails"),modalClose=document.getElementById("modalClose"),modalPrev=document.getElementById("modalPrev"),modalNext=document.getElementById("modalNext"),currentProject=-1;
+function openModal(index){currentProject=index;var d=index<=4?projectData[index]:idProjects[index-5];var isZh=currentLang==="zh";modalMedia.innerHTML="";if(d.mediaType==="video"){modalMedia.innerHTML='<video src="'+d.media+'" poster="'+d.videoPoster+'" controls autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>';}else{modalMedia.innerHTML='<img src="'+d.media+'" alt="'+titleText+'" style="width:100%;height:100%;object-fit:cover;">';}var titleText=isZh||typeof d.titleEn==='undefined'?d.title:d.titleEn;var typeLabel=isZh?d.typeLabelZh:d.typeLabelEn,desc=isZh?d.descZh:d.descEn,process=isZh?d.processZh:d.processEn,typeClass=d.type==="id"?" type-id":"";modalDetails.innerHTML='<div class="modal-type'+typeClass+'">'+typeLabel+'</div><h2>'+titleText+'</h2><p class="modal-desc">'+desc+'</p><div class="modal-process"><h4>'+(isZh?'\u521B\u4F5C\u8FC7\u7A0B':'Process')+'</h4><p>'+process+'</p></div><div class="modal-tags">'+d.tags.map(function(t){return '<span class="tag">'+t+'</span>';}).join("")+'</div>';modalOverlay.classList.add("open");document.body.classList.add("modal-open");}
+function closeModal(){modalOverlay.classList.remove("open");document.body.classList.remove("modal-open");currentProject=-1;}
+function navModal(dir){if(currentProject<0)return;var n=currentProject+dir;if(n<0)n=8;if(n>8)n=0;openModal(n);}
+modalClose.addEventListener("click",closeModal);modalPrev.addEventListener("click",function(){navModal(-1);});modalNext.addEventListener("click",function(){navModal(1);});modalOverlay.addEventListener("click",function(e){if(e.target===modalOverlay)closeModal();});
+document.addEventListener("keydown",function(e){if(currentProject<0)return;if(e.key==="Escape")closeModal();if(e.key==="ArrowLeft")navModal(-1);if(e.key==="ArrowRight")navModal(1);});
+document.querySelectorAll("[data-project]").forEach(function(card){card.addEventListener("click",function(e){e.stopPropagation();openModal(parseInt(card.getAttribute("data-project")));});});
+
+
+
+
+document.querySelectorAll("a, button, .project-card, .skill-category, .contact-link, .about-avatar, .lang-btn, .modal-close, .modal-nav, .service-card, .feature, .btn-view, .testimonial-card, .number-card, .hiw-step").forEach(function(el){el.addEventListener("mouseenter",function(){cursor.style.transform="translate("+(dx-6)+"px, "+(dy-6)+"px) scale(2)";cursor.style.borderColor="var(--purple)";});el.addEventListener("mouseleave",function(){cursor.style.transform="translate("+(dx-6)+"px, "+(dy-6)+"px) scale(1)";cursor.style.borderColor="var(--cyan)";});});
+
+/* 3D Tilt */
+document.querySelectorAll("[data-tilt]").forEach(function(card){card.addEventListener("mousemove",function(e){var r=card.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,mx2=r.width/2,my2=r.height/2,rx=((y-my2)/my2)*-8,ry=((x-mx2)/mx2)*8;card.style.transform="perspective(1000px) rotateX("+rx+"deg) rotateY("+ry+"deg)";var g=card.querySelector(".card-glow");if(g)g.style.background="radial-gradient(circle at "+x+"px "+y+"px, rgba(0,229,255,.08) 0%, transparent 60%)";});card.addEventListener("mouseleave",function(){card.style.transform="perspective(1000px) rotateX(0) rotateY(0)";var g=card.querySelector(".card-glow");if(g)g.style.background="";});});
+
+/* Hero Glow */
+var heroGlow=document.getElementById("heroGlow"),hero=document.querySelector(".hero");hero.addEventListener("mousemove",function(e){var r=hero.getBoundingClientRect();heroGlow.style.transform="translate(calc(-50% + "+(e.clientX-r.left-r.width/2)+"px), calc(-50% + "+(e.clientY-r.top-r.height/2)+"px))";});
+
+/* Typing */
+var typingEl=document.getElementById("typing");var zhPhrases=["3D\u52A8\u6548\u8BBE\u8BA1\u5E08","\u5DE5\u4E1A\u8BBE\u8BA1\u5E08","\u521B\u610F\u6280\u672F\u7231\u597D\u8005"];var enPhrases=["3D Motion Designer","Industrial Designer","Creative Technologist"];var phrases=zhPhrases,phraseIdx=0,charIdx=0,isDeleting=false;function typeEffect(){var c=phrases[phraseIdx];if(isDeleting){typingEl.textContent=c.substring(0,charIdx-1);charIdx--;}else{typingEl.textContent=c.substring(0,charIdx+1);charIdx++;}if(!isDeleting&&charIdx===c.length){isDeleting=true;setTimeout(typeEffect,1500);return;}if(isDeleting&&charIdx===0){isDeleting=false;phraseIdx=(phraseIdx+1)%phrases.length;}setTimeout(typeEffect,isDeleting&&charIdx===0?400:(isDeleting?40:80));}typeEffect();
+
+/* Hero Counters */
+var co=new IntersectionObserver(function(e){e.forEach(function(en){if(en.isIntersecting){var el=en.target,t=+el.dataset.target,s=performance.now();function tick(n){var p=Math.min((n-s)/2000,1);el.textContent=Math.floor(p*t);if(p<1)requestAnimationFrame(tick);}requestAnimationFrame(tick);co.unobserve(el);}});},{threshold:.5});document.querySelectorAll(".hero-stat .num").forEach(function(c){co.observe(c);});
+
+/* Numbers Section Counters */
+var nco=new IntersectionObserver(function(e){e.forEach(function(en){if(en.isIntersecting){var el=en.target,t=parseFloat(el.dataset.num),s=performance.now();function tick(n){var p=Math.min((n-s)/2500,1);el.textContent=t==2.8?(p*t).toFixed(1):Math.floor(p*t);if(p<1)requestAnimationFrame(tick);}requestAnimationFrame(tick);nco.unobserve(el);}});},{threshold:.5});document.querySelectorAll(".number-card [data-num]").forEach(function(c){nco.observe(c);});
+
+/* Skill Bars */
+var so=new IntersectionObserver(function(e){e.forEach(function(en){if(en.isIntersecting){en.target.style.width=en.target.dataset.width+"%";so.unobserve(en.target);}});},{threshold:.3});document.querySelectorAll(".skill-bar-fill").forEach(function(b){b.style.width="0";so.observe(b);});
+
+/* Scroll Reveal */
+var ro=new IntersectionObserver(function(e){e.forEach(function(en){if(en.isIntersecting){en.target.style.opacity="1";en.target.style.transform="translateY(0)";ro.unobserve(en.target);}});},{threshold:.15});document.querySelectorAll("section > .section-tag, .section-header, .about-grid, .feature, .services-grid, .projects-grid, .testimonials-grid, .numbers-row, .timeline, .how-i-work-steps, .skills-container, .contact-inner").forEach(function(el){el.style.opacity="0";el.style.transform="translateY(30px)";el.style.transition="opacity .6s ease-out, transform .6s ease-out";ro.observe(el);});
+
+/* Timeline */
+var tlo=new IntersectionObserver(function(e){e.forEach(function(en){if(en.isIntersecting){en.target.style.opacity="1";en.target.style.transform="translateX(0)";tlo.unobserve(en.target);}});},{threshold:.2});document.querySelectorAll(".timeline-item").forEach(function(el){el.style.opacity="0";el.style.transform="translateX(-20px)";el.style.transition="opacity .5s ease-out, transform .5s ease-out";tlo.observe(el);});
+
+/* Nav Highlight */
+var navLinks=document.querySelectorAll(".nav-links a"),sections=document.querySelectorAll("section[id]");window.addEventListener("scroll",function(){var cur="";sections.forEach(function(s){if(window.scrollY>=s.offsetTop-100)cur=s.id;});navLinks.forEach(function(a){a.style.color=a.getAttribute("href")==="#"+cur?"var(--cyan)":"";});});
+
+document.addEventListener("mouseleave",function(){cursor.style.opacity="0";cursorDot.style.opacity="0";cursorTrail.style.opacity="0";});document.addEventListener("mouseenter",function(){cursor.style.opacity="1";cursorDot.style.opacity="1";});
+
+
+/* Toast */
+var toast=document.getElementById("toast"),toastMsg=document.getElementById("toastMsg"),toastTimer;
+function showToast(msg){toastMsg.textContent=msg;toast.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.classList.remove("show");},1500);}
+
+
+
+/* Node Network Canvas */
+(function(){
+  var nc=document.getElementById("node-canvas"),nctx=nc.getContext("2d");
+  var nw,nh,nodes=[],NODE_COUNT=40,CONN_DIST=160,PULL_RADIUS=220;
+  function nresize(){nw=nc.width=window.innerWidth;nh=nc.height=window.innerHeight;}
+  nresize();window.addEventListener("resize",nresize);
+  function Node(){this.x=Math.random()*nw;this.y=Math.random()*nh;this.ox=this.x;this.oy=this.y;this.vx=0;this.vy=0;this.size=Math.random()*2+1.2;this.phase=Math.random()*Math.PI*2;}
+  for(var i=0;i<NODE_COUNT;i++)nodes.push(new Node());
+  var nmx=nw/2,nmy=nh/2;
+  document.addEventListener("mousemove",function(e){nmx=e.clientX;nmy=e.clientY;});
+  var ntime=0;function nanimate(){ntime+=0.02;
+    nctx.clearRect(0,0,nw,nh);
+    for(var i=0;i<nodes.length;i++){
+      var n=nodes[i];
+      var dx=nmx-n.x,dy=nmy-n.y,dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<PULL_RADIUS&&dist>1){var f=(PULL_RADIUS-dist)/PULL_RADIUS;n.vx+=(dx/dist)*f*.03;n.vy+=(dy/dist)*f*.03;}
+      n.x+=n.vx;n.y+=n.vy;n.vx*=.92;n.vy*=.92;
+      n.x+=(n.ox-n.x)*.003;n.y+=(n.oy-n.y)*.003;
+      for(var j=i+1;j<nodes.length;j++){
+        var ndx=n.x-nodes[j].x,ndy=n.y-nodes[j].y,ndist=Math.sqrt(ndx*ndx+ndy*ndy);
+        if(ndist<CONN_DIST){
+          nctx.beginPath();nctx.moveTo(n.x,n.y);nctx.lineTo(nodes[j].x,nodes[j].y);
+          nctx.strokeStyle="rgba(74,246,38,"+(.25*(1-ndist/CONN_DIST))+")";nctx.lineWidth=.5;nctx.stroke();
+        }
+      }
+      nctx.beginPath();var ps=n.size*(.7+.3*Math.sin(ntime+n.phase));nctx.arc(n.x,n.y,ps,0,Math.PI*2);
+      var pulse=.3+.15*Math.sin(ntime+n.phase);nctx.fillStyle="rgba(74,246,38,"+pulse+")";nctx.fill();
+      nctx.strokeStyle="rgba(74,246,38,.15)";nctx.lineWidth=.8;nctx.stroke();nctx.beginPath();nctx.arc(n.x,n.y,ps+3,0,Math.PI*2);nctx.strokeStyle="rgba(74,246,38,"+(pulse*.15)+")";nctx.lineWidth=1;nctx.stroke();
+    }
+    requestAnimationFrame(nanimate);
+  }
+  nanimate();
+})();
+setLang("zh");
+</script>
+</body>
+</html>
